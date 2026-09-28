@@ -1,3 +1,16 @@
+<!--
+  这是托管块模板。整段复制（含首尾标记）到项目 AGENTS.md 中。
+
+  ⚠️ 含占位符，采用前请替换：
+      <盘符>            Windows 备份盘符，例如 E
+      <小写盘符>        对应的 WSL 挂载名，例如 e（对应 /mnt/e）
+
+  替换后请把本文件作为你的「权威块」，并用它校验部署：
+      python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targets.txt
+
+  注意：不要改动标记本身（:START v2 / :END）——它是机械同步的定位依据。
+-->
+
 <!-- GLOBAL-PROJECT-LOG-RULES:START v2 -->
 ## GLOBAL-PROJECT-LOG-RULES 托管规则块（v2）
 
@@ -28,11 +41,11 @@
 - 日志机制本身不 commit、tag、push、删文件、切分支、操作数据库或控制服务；提交只能由上面的 Git 规则单独触发。
 
 ### 安全与隐私
-- 永不把密码、`.env` 内容、凭据、token、cookie、私钥、真实学生数据、联系方式、数据库内容或敏感配置写入项目文件、日志或聊天。**秘密一旦提交极难清除**（需重写历史），防线前移到"根本不提交"。
+- 永不把密码、`.env` 内容、凭据、token、cookie、私钥、真实个人数据、联系方式、数据库内容或敏感配置写入项目文件、日志或聊天。**秘密一旦提交极难清除**（需重写历史），防线前移到"根本不提交"。
 - 无 git 跟踪的用户级文件，改前备份到本平台备份根，写入前核对目标盘可用与空间，写入后逐文件校验：
-  - Windows Codex：`E:\CodexBackups\<类别>\<时间戳>`
-  - WSL：`/mnt/e/CodexBackups/<类别>-<时间戳>/`
-  - opencode：`E:\OpenCodeBackups\<类别>\<时间戳>`（**不与 Codex 备份混放**）
+  - Windows Codex：`<盘符>:\CodexBackups\<类别>\<时间戳>`
+  - WSL：`/mnt/<小写盘符>/CodexBackups/<类别>-<时间戳>/`
+  - opencode：`<盘符>:\OpenCodeBackups\<类别>\<时间戳>`（**不与 Codex 备份混放**）
 
 ### 输出纪律
 - 命令输出做精确匹配前先去 ANSI / 用 `--no-color`，优先结构化输出；名称命中后还要核对路径与身份。

@@ -84,16 +84,19 @@ cp templates/AGENTS.project-skeleton.md /path/to/project/AGENTS.md
 
 ### 3. 批量同步与校验
 
-```bash
-# 同步（先 dry-run）
-python3 scripts/sync_block.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \
-        --targets targets.txt
-python3 scripts/sync_block.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \
-        --targets targets.txt --apply
+先把你的真实目标写进 `local/targets.txt`（该文件不被提交），或直接传路径：
 
-# 校验：全部一致才算成功
-python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \
-        --targets targets.txt
+```bash
+# 生成真实清单（示例）
+ls /path/to/projects/*/AGENTS.md > local/targets.txt
+
+# 同步（先 dry-run，确认无误再加 --apply）
+python3 scripts/sync_block.py --block <你的块文件> --targets local/targets.txt
+python3 scripts/sync_block.py --block <你的块文件> --targets local/targets.txt --apply \
+        --backup-dir <备份根>/block-sync-$(date +%Y%m%d-%H%M%S)
+
+# 校验：全部一致才算成功（退出码 0/1，可直接用于 CI）
+python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targets.txt
 ```
 
 ### 4. 按 Agent 配置入口
@@ -125,6 +128,32 @@ python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.
 
 - **公开版**（本仓库）：用户名、盘符、服务路径、内部项目名均已替换为占位符，保留方法与结构。
 - **本地真实版**：放在 `local/`，已被 `.gitignore` 排除，永不提交，仅本机对照用。
+
+### 占位符一览
+
+采用前请替换（块模板与示例配置中出现的）：
+
+| 占位符 | 含义 | 示例 |
+|---|---|---|
+| `<盘符>` | Windows 备份盘符 | `E` |
+| `<小写盘符>` | 对应的 WSL 挂载名 | `e`（即 `/mnt/e`） |
+| `<类别>` / `<时间戳>` | 备份批次名与时间戳 | `rules-v2` / `20260928-120000` |
+| `{{PROJECT_NAME}}` 等 | 项目骨架模板变量 | `my-project` |
+
+### ⚠️ 校验要用**你自己的**块文件
+
+`configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md` 是**带占位符的模板**。
+替换占位符后，请把它（或你的副本）作为**权威块**，再用它校验部署：
+
+```bash
+# 正确：用你自己的块
+python3 scripts/verify_blocks.py --block local/GLOBAL-PROJECT-LOG-RULES.v2.filled.md \
+        --targets local/targets.txt
+
+# 错误：用仓库里的公开模板去校验已填值的部署 —— 必然报"不一致"
+```
+
+这是**预期行为**：模板与填值后的实例本来就不同，校验比的正是"你的部署是否都等于你指定的那一份"。
 
 ## 许可证
 

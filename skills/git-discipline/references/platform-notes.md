@@ -13,10 +13,13 @@
 
 ## 2. 平台差异速查
 
+> 下表的备份根用**示例盘符 `E`**。请按你机器上的实际备份盘替换
+> （公开模板 `configs/block/` 里用的是 `<盘符>` 占位符）。
+
 | 维度 | Windows | WSL / Linux |
 |---|---|---|
-| 备份根（Codex） | `E:\CodexBackups\<类别>\<时间戳>` | `/mnt/e/CodexBackups/<类别>-<时间戳>/` |
-| 备份根（opencode） | `E:\OpenCodeBackups\<类别>\<时间戳>` | 同（**与 Codex 备份不混放**） |
+| 备份根（Codex） | `<盘符>:\CodexBackups\<类别>\<时间戳>`（例：`E:\...`） | `/mnt/<小写盘符>/CodexBackups/<类别>-<时间戳>/`（例：`/mnt/e/...`） |
+| 备份根（opencode） | `<盘符>:\OpenCodeBackups\<类别>\<时间戳>`（**与 Codex 备份不混放**） | 同左（经 `/mnt/<小写盘符>/` 访问） |
 | Shell | `pwsh`（PowerShell 7） | bash / zsh |
 | 复制 | `Copy-Item` | `cp` |
 | 换行 | `*.ps1`/`*.cmd` 用 CRLF | 统一 LF |

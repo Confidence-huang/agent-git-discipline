@@ -36,12 +36,13 @@ PAT_HEADING = re.compile(
     r"##\s*GLOBAL-PROJECT-LOG-RULES[^\n]*\n(?:(?!##\s).)*",
     re.S,
 )
-# 仅用于「旧格式残留」告警：这些写法说明块没被 v2 统一
+# 仅用于「旧格式残留」告警：这些写法说明块没被 v2 统一。
+# 注意最后一条必须排除 START/END，否则会把当前的 `:START v2 -->` 误报成旧格式。
 PAT_LEGACY = re.compile(
-    r"GLOBAL-PROJECT-LOG-RULES:(START|BEGIN)\s*-->|"
-    r"GLOBAL-PROJECT-LOG-RULES\s+START\s*-->|"
-    r"<!--\s*/GLOBAL-PROJECT-LOG-RULES\s*-->|"
-    r"GLOBAL-PROJECT-LOG-RULES:\s*[^-\n]+-->"
+    r"GLOBAL-PROJECT-LOG-RULES:(START|BEGIN)\s*-->|"          # 无版本号的 :START/:BEGIN
+    r"GLOBAL-PROJECT-LOG-RULES\s+START\s*-->|"                # 空格分隔
+    r"<!--\s*/GLOBAL-PROJECT-LOG-RULES\s*-->|"                # 闭合式单标记
+    r"GLOBAL-PROJECT-LOG-RULES:\s+(?!(?:START|END)\b)[^-\n]+-->"  # 内联一句话形式
 )
 
 
