@@ -1,0 +1,59 @@
+name: CI
+
+# 触发：推送到 main、所有 PR、以及手动触发
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# 同一分支的新推送取消旧的运行，避免排队浪费
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: 一致性检查
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # ── 核心不变量：仓库内所有托管块副本必须与权威块字节一致 ──
+      # 改了权威块却忘了同步 templates/ 骨架，这一步会直接失败。
+      - name: 校验托管块一致性
+        run: |
+          python3 scripts/verify_blocks.py \
+            --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \
+            --targets targets.txt
+
+      # ── 技能 frontmatter / 换行 / 脚本语法 ──
+      - name: 仓库一致性检查
+        run: python3 scripts/check_repo.py
+
+      # ── 安装脚本冒烟测试：在隔离 HOME 下验证 link 与 copy 两种模式 ──
+      - name: 技能安装脚本冒烟测试
+        run: |
+          set -euo pipefail
+          SB="$(mktemp -d)"
+          echo "::group::link 模式"
+          HOME="$SB" bash scripts/install_skill.sh --target agents-home
+          test -f "$SB/.agents/skills/git-discipline/SKILL.md"
+          test -L "$SB/.agents/skills/git-discipline"
+          echo "::endgroup::"
+
+          echo "::group::copy 模式（且不应带入 .git）"
+          HOME="$SB" bash scripts/install_skill.sh \
+            --target project --project-root "$SB/proj" --method copy
+          test -f "$SB/proj/.agents/skills/git-discipline/SKILL.md"
+          test ! -d "$SB/proj/.agents/skills/git-discipline/.git"
+          echo "::endgroup::"
+
+          rm -rf "$SB"
+          echo "✅ 安装脚本冒烟测试通过"

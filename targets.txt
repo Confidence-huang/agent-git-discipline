@@ -25,3 +25,7 @@
 
 # ── 本项目自身的块文件（永远参与校验，用于自检）──
 configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md
+
+# ── 仓库内其他块副本：必须与权威块字节一致，否则 CI 失败 ──
+# 这是本仓库的真实不变量：改了权威块却忘了同步骨架，会被 CI 直接拦下。
+templates/AGENTS.project-skeleton.md

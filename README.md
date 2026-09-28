@@ -1,5 +1,7 @@
 # agent-git-discipline
 
+[![CI](https://github.com/Confidence-huang/agent-git-discipline/actions/workflows/ci.yml/badge.svg)](https://github.com/Confidence-huang/agent-git-discipline/actions/workflows/ci.yml)
+
 > 让 AI 编码 Agent **每次改动都留下可回退的点**，并把这条纪律机械地同步到多个 Agent、多个项目、多个平台。
 
 写给同时使用多个 AI 编码 Agent（Codex / opencode / Claude Code / Cursor / …）的人：
@@ -119,8 +121,29 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   技能热加载（无需重启）
 - ⚠️ **未验证**：macOS 平台、`git worktree` 隔离、pre-commit 钩子强制、
   Claude Code / Cursor / Gemini CLI / Aider 的规则入口
-- ❌ **已知未解决**：仅本地仓库无异地备份、无 CI 侧自动化校验（见
-  [docs/02-实践经验.md](docs/02-实践经验.md) 第三节）
+- ❌ **已知未解决**：仅本地仓库无异地备份（见
+  [docs/02-实践经验.md](docs/02-实践经验.md) 第五节）
+
+## 持续集成
+
+仓库自带 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)，在每次推送与 PR 上运行三步：
+
+| 步骤 | 脚本 | 拦什么 |
+|---|---|---|
+| 托管块一致性 | `scripts/verify_blocks.py` | 改了权威块却忘了同步 `templates/` 骨架 —— **本仓库的核心不变量** |
+| 仓库一致性 | `scripts/check_repo.py` | 技能 frontmatter 缺失/非 kebab-case、文本文件混入 CRLF、脚本语法错误 |
+| 安装脚本冒烟 | `scripts/install_skill.sh` | 在隔离 HOME 下验证 link 与 copy 两种模式，并确认 copy 不带入 `.git` |
+
+本地预演（与 CI 等价）：
+
+```bash
+python3 scripts/verify_blocks.py \
+  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md --targets targets.txt
+python3 scripts/check_repo.py
+```
+
+**给自己的部署加同样的门禁**：把你自己的块文件与 `local/targets.txt` 放进一个私有仓库，
+用同样的 workflow 校验。这样任何人在项目里手改了块，PR 阶段就会被拦下。
 
 ## 双版本说明
 
