@@ -1,0 +1,29 @@
+# ── 本机真实配置（双版本的「不发布」那一半）──
+# 故意保留在仓库目录内便于对照，但永不提交。
+local/
+
+# ── 备份与临时产物 ──
+*.bak
+*.bak.*
+*.orig
+*.rej
+*.tmp
+*.log
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── 编辑器 / 系统 ──
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# ── 校验产物 ──
+verify-report.json
+block-hashes.txt

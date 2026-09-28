@@ -1,0 +1,36 @@
+# ── 统一换行：仓库内一律 LF，避免 Windows/WSL 双平台 diff 噪声 ──
+* text=auto eol=lf
+
+# 明确按文本处理并在检出时保持 LF
+*.md    text eol=lf
+*.py    text eol=lf
+*.sh    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+*.toml  text eol=lf
+*.txt   text eol=lf
+
+# ── Windows 专属脚本保留 CRLF（PowerShell / cmd 需要）──
+*.ps1   text eol=crlf
+*.cmd   text eol=crlf
+*.bat   text eol=crlf
+
+# ── 二进制：不做换行转换，且不参与 diff ──
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.pdf   binary
+*.pptx  binary
+*.docx  binary
+*.xlsx  binary
+*.vsdx  binary
+
+# ── 语言统计与 diff 行为 ──
+*.md    diff=markdown
+docs/** linguist-documentation
+local/** linguist-vendored
+
+# 归档/发布产物不参与语言统计
+*.min.js linguist-generated

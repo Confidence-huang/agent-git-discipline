@@ -1,0 +1,27 @@
+# 待同步的目标文件清单
+#
+# 用法：
+#   python3 scripts/sync_block.py   --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md --targets targets.txt
+#   python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md --targets targets.txt
+#
+# 格式：每行一个文件路径。支持：
+#   - 以 # 开头的注释行与空行会被忽略
+#   - 以 $HOME / ${HOME} 开头的路径会展开家目录
+#   - 以 / 或 盘符开头的为绝对路径
+#
+# 注意：本项目发布的 targets.txt 只含示例（下面被注释掉的几行）。
+#      你的真实清单应写入 local/targets.txt（已被 .gitignore 排除）。
+
+# ── 示例：Linux / WSL 侧项目 ──
+# $HOME/projects/example-project/AGENTS.md
+# $HOME/projects/another-project/AGENTS.md
+
+# ── 示例：Windows 侧项目（从 WSL 访问时用 /mnt/...）──
+# /mnt/d/projects/example-project/AGENTS.md
+# /mnt/c/Users/<user>/.config/opencode/AGENTS.md
+
+# ── 示例：批量通配（脚本原生不支持通配，请用 shell 展开后写入本文件）──
+#   ls /mnt/d/projects/*/AGENTS.md > local/targets.txt
+
+# ── 本项目自身的块文件（永远参与校验，用于自检）──
+configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md
