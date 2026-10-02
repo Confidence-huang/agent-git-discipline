@@ -38,12 +38,31 @@ NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
 def tracked_files():
-    """列出被 git 跟踪的文件；无 git 环境时退回遍历当前目录。"""
+    """列出被 git 跟踪的文件；无 git 环境时退回遍历当前目录。
+
+    ⚠️ 必须用 `-z`（NUL 分隔）而不是默认输出模式。
+    默认模式下 `core.quotePath=true`（git 的默认值）会把含非 ASCII 字符的路径
+    转义成**带双引号的 C 风格字符串**，例如：
+
+        "docs/01-\\345\\217\\202\\350\\200\\203...md"
+
+    这样的字符串拿去做 `os.path.isfile()` 恒为假，于是所有中文名文件
+    会被下游检查**静默跳过**（曾导致 docs/01–05 从未被换行检查覆盖）。
+    `-z` 输出原始字节、不做任何转义，从根本上消除这一类误判。
+
+    显式指定 `encoding="utf-8"` + `surrogateescape`：前者让解码不随 locale 漂移
+    （CI 里 `LANG` 可能未设置），后者保证即使遇到非 UTF-8 字节名也不会抛异常。
+    """
     try:
         out = subprocess.run(
-            ["git", "ls-files"], capture_output=True, text=True, check=True
+            ["git", "ls-files", "-z"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="surrogateescape",
+            check=True,
         ).stdout
-        return [p for p in out.splitlines() if p.strip()]
+        return [p for p in out.split("\0") if p.strip()]
     except (subprocess.CalledProcessError, FileNotFoundError):
         found = []
         for root, dirs, files in os.walk("."):
