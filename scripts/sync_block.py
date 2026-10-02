@@ -13,7 +13,7 @@
 用法
 ----
     # 预览
-    python3 scripts/sync_block.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \\
+    python3 scripts/sync_block.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \\
             --targets targets.txt
 
     # 实际写入（可选先备份）
@@ -28,7 +28,7 @@ import re
 import shutil
 import sys
 
-# 配对标记（v2 推荐形态）
+# 配对标记（v3 推荐形态）
 PAT_PAIRED = re.compile(
     r"<!--\s*GLOBAL-PROJECT-LOG-RULES:START\s+v[\d.]+\s*-->.*?"
     r"<!--\s*GLOBAL-PROJECT-LOG-RULES:END\s*-->",
