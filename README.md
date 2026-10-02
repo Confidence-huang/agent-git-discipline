@@ -43,11 +43,12 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
 ```
 .
 ├── README.md                    # 本文件：总入口
-├── docs/                        # 四类文档
+├── docs/                        # 五类文档
 │   ├── 01-参考来源.md            # 参考的开源仓库、借鉴点、差异、许可证注意事项
 │   ├── 02-实践经验.md            # 踩过的坑 / 已验证做法 / 未解决问题（含复现步骤）
 │   ├── 03-Agent适配.md           # 各 Agent 的配置文件、入口提示词、使用方法
-│   └── 04-环境支持.md            # WSL / Windows / macOS 平台差异与陷阱
+│   ├── 04-环境支持.md            # WSL / Windows / macOS 平台差异与陷阱
+│   └── 05-提交与PR流程.md        # 推送/PR 授权边界、分支判据、标题与描述规范
 ├── skills/git-discipline/       # 技能本体（Agent 可直接加载）
 │   ├── SKILL.md                 #   主规则：授权边界、原子提交、编号回报、回退分级
 │   └── references/              #   回退手册等按需加载的细节
@@ -120,6 +121,8 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   `reflog` 兜底）、Git 身份缺失导致无法提交、暂存区滞留、DrvFs `cp -p` 失败、
   技能热加载（无需重启）
 - ⚠️ **未验证**：macOS 平台、`git worktree` 隔离、pre-commit 钩子强制、
+  多人协作的 PR 评审流程（本项目为单人仓库，见
+  [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) 第八节）、
   Claude Code / Cursor / Gemini CLI / Aider 的规则入口
 - ❌ **已知未解决**：仅本地仓库无异地备份（见
   [docs/02-实践经验.md](docs/02-实践经验.md) 第五节）
@@ -144,6 +147,9 @@ python3 scripts/check_repo.py
 
 **给自己的部署加同样的门禁**：把你自己的块文件与 `local/targets.txt` 放进一个私有仓库，
 用同样的 workflow 校验。这样任何人在项目里手改了块，PR 阶段就会被拦下。
+
+提交与 PR 的完整流程——授权边界、什么时候才该开 PR、标题与描述模板、PR 阶段的回退——
+见 [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md)。
 
 ## 双版本说明
 
