@@ -13,6 +13,10 @@
    本检查用于发现"绕过 .gitattributes 写进来"的 CRLF）
 3. 脚本语法：.py 用 py_compile，.sh 用 bash -n
 
+另外：**被跟踪但在工作区不存在的文件会被直接报为问题**，
+不允许它在扩展名过滤里静默消失——静默跳过正是路径转义 bug 得以隐藏的原因
+（见 tracked_files() 的说明）。
+
 退出码：0 = 全部通过；1 = 有问题。可直接用于 CI。
 
 用法
@@ -119,10 +123,14 @@ def check_eol():
     for p in tracked_files():
         if p.startswith(SKIP_PREFIX):
             continue
+        # 存在性检查放在扩展名过滤**之前**，且报错而不是 continue：
+        # 被跟踪却不在工作区的文件必须显形。历史教训——路径转义曾让 5 个
+        # 中文名文档在下方 continue 处静默跳过，CI 一直显示"通过"。
+        if not os.path.isfile(p):
+            problems.append(f"{p}: 被 git 跟踪但在工作区不存在，换行未检查")
+            continue
         ext = os.path.splitext(p)[1].lower()
         if ext in CRLF_OK_EXT or ext not in TEXT_EXT:
-            continue
-        if not os.path.isfile(p):
             continue
         n += 1
         with open(p, "rb") as fh:
