@@ -63,11 +63,13 @@ cp templates/AGENTS.project-skeleton.md /path/to/project/AGENTS.md
 ```
 按全局 Git 闭环执行：改前核对 Git 根与工作树，原子改动立即本地 commit，
 禁止 git add . / -A，commit 后记「第 N 次 git」，最终回复最后一条普通文本写
-「已git：第 N 次 git（commit <短SHA>）」。
+「已git：<仓库> 第 N 次 git（commit <短SHA>）」。
 ```
 
+（涉及**多个仓库**时**逐个仓库各写一行**；单仓库也**不省略** `<仓库>`，否则事后分不清是哪一份回报。）
+
 **验证证据**：本项目使用者的既有会话记录中稳定产出
-`已git：第 N 次 git（commit <短SHA>）` 格式回报；`CODEX_HOME` 未设置时默认
+`已git：<仓库> 第 N 次 git（commit <短SHA>）` 格式回报；`CODEX_HOME` 未设置时默认
 `~/.codex`，该路径下的 `AGENTS.md` 被读取。
 
 **注意事项**
@@ -106,7 +108,7 @@ ln -s <skills-root>/git-discipline ~/.config/opencode/skills/git-discipline
 **入口提示词**
 
 ```
-执行纪律与 Git 闭环见全局 AGENTS.md §9；本项目托管块已含 v2 规则。
+执行纪律与 Git 闭环见全局 AGENTS.md §9；本项目托管块已含 v3 规则。
 ```
 
 **验证证据**：会话记录中出现 `提交完成（第 29 次 git）` 形式的回报，
@@ -198,7 +200,7 @@ ln -s <skills-root>/git-discipline ~/.agents/skills/git-discipline
 
 ```bash
 # 把托管块复制进 CLAUDE.md（Claude Code 不读 AGENTS.md）
-cat configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md >> /path/to/project/CLAUDE.md
+cat configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md >> /path/to/project/CLAUDE.md
 ```
 
 **兼容技巧**：若希望 `AGENTS.md` 与 `CLAUDE.md` 共用一份内容，可用符号链接：

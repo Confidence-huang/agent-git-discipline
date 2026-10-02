@@ -10,8 +10,8 @@
 
 `PROJECT_LOG.md` 是唯一跨会话连续性入口与当前状态事实来源。进入项目先读它，再读本文件。
 
-<!-- GLOBAL-PROJECT-LOG-RULES:START v2 -->
-## GLOBAL-PROJECT-LOG-RULES 托管规则块（v2）
+<!-- GLOBAL-PROJECT-LOG-RULES:START v3 -->
+## GLOBAL-PROJECT-LOG-RULES 托管规则块（v3）
 
 ### 身份与范围
 - 本块适用于本文件所在的**本仓库**，以及规范化后 Git common dir 与该仓库完全一致的 worktree；路径名、标记文件、remote 名或提交本身都不能单独证明身份。
@@ -35,7 +35,7 @@
 - **原子性检验**：只做一件事／代码库仍可工作／message 标题不需要"and"／能独立 revert／无需外部上下文即可理解。描述时必须说"和"，就是两个 commit。
 - 本地 commit **已默认授权**，不必逐次确认；**不包含**新建/切换分支、rebase、reset、改写历史、tag、push、PR、删除、批量清理——这些需单独授权。`push --force` 禁止；确需时只用 `--force-with-lease` 且限自己分支。
 - 工作区起点若为脏：用户的改动先报告、不擅自提交或丢弃；上一轮 agent 的改动先提交或 stash 存档；**不回退与本轮无关的改动**。
-- commit 后 `git rev-list --first-parent --count HEAD` 记「第 N 次 git」/完整 SHA/文件范围/验证结果；最终回复**最后一条普通文本**写 `已git：第 N 次 git（commit <短SHA>）`；无 commit 写 `本轮未git：原因`；提交失败报 `GIT_BLOCKED`，不得把未提交说成完成。
+- commit 后 `git rev-list --first-parent --count HEAD` 记「第 N 次 git」/完整 SHA/文件范围/验证结果；最终回复**最后一条普通文本**写 `已git：<仓库> 第 N 次 git（commit <短SHA>）`——`<仓库>` **必填**，只改一个仓库也不省略（否则事后无法分辨是哪一份回报）；涉及多个仓库时**逐个仓库各写一行**；无 commit 写 `本轮未git：原因`；提交失败报 `GIT_BLOCKED`，不得把未提交说成完成。
 - 回退优先 `git revert`（保留历史）；`reset --hard` / `git clean` 属危险操作需授权；`git reflog` 是最后保险。
 - 日志机制本身不 commit、tag、push、删文件、切分支、操作数据库或控制服务；提交只能由上面的 Git 规则单独触发。
 

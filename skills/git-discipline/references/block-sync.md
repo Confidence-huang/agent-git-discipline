@@ -15,8 +15,8 @@
 ## 2. 块形态
 
 ```markdown
-<!-- GLOBAL-PROJECT-LOG-RULES:START v2 -->
-## GLOBAL-PROJECT-LOG-RULES 托管规则块（v2）
+<!-- GLOBAL-PROJECT-LOG-RULES:START v3 -->
+## GLOBAL-PROJECT-LOG-RULES 托管规则块（v3）
 
 ### 身份与范围
 …（若干条款）
@@ -31,7 +31,7 @@
 | 要点 | 原因 |
 |---|---|
 | **配对标记**（START / END） | 旧版只有开头标记，实测漂移出 5 种格式，无法机械定位边界 |
-| **版本号**（`v2`） | 使新旧块可区分；升版时可一次性筛选受影响文件 |
+| **版本号**（`v3`） | 使新旧块可区分；升版时可一次性筛选受影响文件 |
 | **平台中立** | 块内不写死盘符，按平台列出取值，使三平台共用同一份字节 |
 
 ## 3. 为什么必须平台中立
@@ -49,18 +49,18 @@
 ```bash
 # 1) 预览（默认 dry-run，不动文件）
 python3 scripts/sync_block.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \
+    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
     --targets targets.txt
 
 # 2) 实际写入（可选先备份）
 python3 scripts/sync_block.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \
+    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
     --targets targets.txt --apply \
     --backup-dir <backup-root>/block-sync-$(date +%Y%m%d-%H%M%S)
 
 # 3) 校验：必须 n/n 全一致
 python3 scripts/verify_blocks.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \
+    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
     --targets targets.txt
 ```
 

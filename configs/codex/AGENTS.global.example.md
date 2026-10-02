@@ -31,8 +31,9 @@
   push、PR 或远端操作；这些仍按任务范围和外部影响**单独确认**。
 - 每次成功本地 commit 后，用 `git rev-list --first-parent --count HEAD` 计算该仓库连续
   Git 编号，并在项目日志记录"第 N 次 git"、完整 commit SHA 和提交范围。
-  最终回复的**最后一条普通文本**必须是 `已git：第 N 次 git（commit <短SHA>）`；
+  最终回复的**最后一条普通文本**必须是 `已git：<仓库> 第 N 次 git（commit <短SHA>）`；
   若本轮没有 commit，则明确写 `本轮未git：原因`，**不得伪造编号**。
+- 涉及**多个仓库**时**逐个仓库各写一行**；单仓库也**不省略** `<仓库>`，否则事后分不清是哪一份回报。
 - Git 根用 `git rev-parse --show-toplevel` 显式确认，不凭目录名假设。
   工作区起点若为脏：**用户自己的**改动先报告、不擅自提交或丢弃；
   **上一轮 agent 的**改动先提交或 `stash` 存档；**不回退与本轮无关的改动**。
@@ -47,8 +48,8 @@
   `git push --force` 禁止，确需时只用 `--force-with-lease` 且限自己的分支。
 - 秘密一旦提交进历史极难清除（需 `git-filter-repo`/BFG 重写历史，
   而重写历史本身需要单独授权），防线必须前移到"根本不提交"；`.gitignore` 本身应入库。
-- 项目级 `AGENTS.md` 应包含 `GLOBAL-PROJECT-LOG-RULES` 托管块 **v2**
-  （配对标记 `:START v2` … `:END`）。本节规则是该块的全局投影。
+- 项目级 `AGENTS.md` 应包含 `GLOBAL-PROJECT-LOG-RULES` 托管块 **v3**
+  （配对标记 `:START v3` … `:END`）。本节规则是该块的全局投影。
 
 ---
 

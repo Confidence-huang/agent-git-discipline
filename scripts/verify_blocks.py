@@ -5,13 +5,13 @@
 --------
 1. 只比对**标记之间**的内容，不比对整个文件——否则文件其他部分的差异会污染结果。
 2. 兼容两种块形态：
-   - 配对标记 `<!-- ...:START v2 --> ... <!-- ...:END -->`（v2 推荐）
+   - 配对标记 `<!-- ...:START v3 --> ... <!-- ...:END -->`（v3 推荐）
    - 标题形态  `## GLOBAL-PROJECT-LOG-RULES ...` 到下一个二级标题（旧版遗留）
 3. 退出码：0 = 全部一致；1 = 有不一致或错误。便于在 CI 里直接使用。
 
 用法
 ----
-    python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md \\
+    python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \\
             --targets targets.txt
     python3 scripts/verify_blocks.py --block <块文件> <文件1> <文件2> ...
     python3 scripts/verify_blocks.py --block <块文件> --targets targets.txt --json
@@ -36,8 +36,8 @@ PAT_HEADING = re.compile(
     r"##\s*GLOBAL-PROJECT-LOG-RULES[^\n]*\n(?:(?!##\s).)*",
     re.S,
 )
-# 仅用于「旧格式残留」告警：这些写法说明块没被 v2 统一。
-# 注意最后一条必须排除 START/END，否则会把当前的 `:START v2 -->` 误报成旧格式。
+# 仅用于「旧格式残留」告警：这些写法说明块没被 v3 统一。
+# 注意最后一条必须排除 START/END，否则会把当前的 `:START v3 -->` 误报成旧格式。
 PAT_LEGACY = re.compile(
     r"GLOBAL-PROJECT-LOG-RULES:(START|BEGIN)\s*-->|"          # 无版本号的 :START/:BEGIN
     r"GLOBAL-PROJECT-LOG-RULES\s+START\s*-->|"                # 空格分隔
