@@ -148,6 +148,20 @@ python3 scripts/check_repo.py
 **给自己的部署加同样的门禁**：把你自己的块文件与 `local/targets.txt` 放进一个私有仓库，
 用同样的 workflow 校验。这样任何人在项目里手改了块，PR 阶段就会被拦下。
 
+### 客户端门禁（`.githooks/pre-push`）
+
+仓库自带 `.githooks/pre-push`，跑的就是上面那两步。钩子文件入库，
+但 `core.hooksPath` 是**仓库级配置、不入库**，所以克隆后需手动启用一次：
+
+```bash
+git config core.hooksPath .githooks
+```
+
+**为什么非要这一道**：免费私有仓库**拿不到** GitHub 分支保护
+（API 返回 `Upgrade to GitHub Pro or make this repository public`），
+客户端钩子是唯一能在本机落地的强制点。逃生口是 `git push --no-verify`——
+门禁是减速带，不是牢门。详见 [docs/05-提交与PR流程.md §六](docs/05-提交与PR流程.md)。
+
 提交与 PR 的完整流程——授权边界、什么时候才该开 PR、标题与描述模板、PR 阶段的回退——
 见 [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md)。
 

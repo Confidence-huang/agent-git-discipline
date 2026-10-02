@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# pre-push 门禁：推送前跑与 CI 完全相同的两步校验。
+#
+# 为什么需要它：免费私有仓库拿不到 GitHub 分支保护
+#   （API 直接返回 "Upgrade to GitHub Pro or make this repository public"），
+#   客户端钩子是唯一能在本机落地的强制点。见 docs/05-提交与PR流程.md §六。
+#
+# 临时绕过（请只在确认过失败原因后使用）：git push --no-verify
+set -uo pipefail
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+rc=0
+
+echo "── [1/2] 托管块一致性 ──"
+python3 scripts/verify_blocks.py \
+  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v2.md --targets targets.txt || rc=1
+echo
+
+echo "── [2/2] 仓库一致性 ──"
+python3 scripts/check_repo.py || rc=1
+echo
+
+if [ "$rc" -ne 0 ]; then
+  echo "❌ pre-push 门禁未通过，已阻止推送。" >&2
+  echo "   确认无误后可用 git push --no-verify 临时绕过。" >&2
+  exit 1
+fi
+
+echo "✅ pre-push 门禁通过（与 CI 两步等价）"
