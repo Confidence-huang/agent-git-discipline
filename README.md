@@ -134,7 +134,7 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 | 步骤 | 脚本 | 拦什么 |
 |---|---|---|
 | 托管块一致性 | `scripts/verify_blocks.py` | 改了权威块却忘了同步 `templates/` 骨架 —— **本仓库的核心不变量** |
-| 仓库一致性 | `scripts/check_repo.py` | 技能 frontmatter 缺失/非 kebab-case、文本文件混入 CRLF、脚本语法错误 |
+| 仓库一致性 | `scripts/check_repo.py` | 技能 frontmatter 缺失/非 kebab-case、文本文件混入 CRLF、脚本语法错误、被跟踪却缺失的文件 |
 | 安装脚本冒烟 | `scripts/install_skill.sh` | 在隔离 HOME 下验证 link 与 copy 两种模式，并确认 copy 不带入 `.git` |
 
 本地预演（与 CI 等价）：
