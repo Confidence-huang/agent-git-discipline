@@ -1,14 +1,28 @@
-# AGENTS.md - {{PROJECT_NAME}}
+<!--
+  这是托管块模板。整段复制（含首尾标记）到项目 AGENTS.md 中。
 
-## 项目身份
+  ⚠️ 含占位符，采用前请替换：
+      <盘符>            Windows 备份盘符，例如 E
+      <小写盘符>        对应的 WSL 挂载名，例如 e（对应 /mnt/e）
 
-- 名称：{{PROJECT_NAME}}
-- 定位：<一句话说明这个项目做什么>
-- 工作区路由：{{WORKSPACE_PATH}}
+  替换后请把本文件作为你的「权威块」，并用它校验部署：
+      python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targets.txt
 
-## 唯一事实来源
+  ── v3 → v4 的唯一内容变更：新增「推送结果以远端为准」──
+      push 的输出不可信（实测报错却打印 Everything up-to-date、远端没收到）；
+      推送后必须 ls-remote/fetch 核对远端 SHA；链路抖动中断属可重试错误，
+      用 -c http.version=HTTP/1.1 -c pack.threads=1 重试，禁止 --no-verify 绕门禁。
 
-`PROJECT_LOG.md` 是唯一跨会话连续性入口与当前状态事实来源。进入项目先读它，再读本文件。
+  ── v2 → v3 的唯一内容变更：编号回报格式加上「仓库名」 ──
+      v2: 已git：第 N 次 git（commit <短SHA>）
+      v3: 已git：<仓库> 第 N 次 git（commit <短SHA>）
+  原因（实测踩过）：多仓库并行时「第 N 次」无法分辨指哪个仓库，
+  同一轮回报里出现过两个仓库都叫「第 7 次」的情况。
+  因块内容变更会改变块哈希，升级后**所有**目标项目都要重新同步
+  （见 docs/04-环境支持.md 第六节）。
+
+  注意：不要改动标记本身（:START v4 / :END）——它是机械同步的定位依据。
+-->
 
 <!-- GLOBAL-PROJECT-LOG-RULES:START v4 -->
 ## GLOBAL-PROJECT-LOG-RULES 托管规则块（v4）
@@ -61,17 +75,3 @@
 ### 详细规则
 - 完整规则与回退命令见 git 纪律技能 `git-discipline`（`SKILL.md` + `references/`）。
 <!-- GLOBAL-PROJECT-LOG-RULES:END -->
-
-## 项目专属约束（块之外）
-
-> ⚠️ 项目特有条款必须写在这里，**不要写进上面的托管块内部**——
-> 否则下次块同步整段替换时会丢失。
-
-- <平台与工具链约束>
-- <目录约定：inputs / work / outputs>
-- <验收标准与禁止事项>
-
-## 全局规则引用
-
-- 执行纪律与 Git 闭环的完整说明见 git 纪律技能，或全局 `AGENTS.md`。
-  本文件只保留项目专属约束与事实，不复制全局全文（防双侧漂移）。

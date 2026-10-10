@@ -1,8 +1,8 @@
 # 待同步的目标文件清单
 #
 # 用法：
-#   python3 scripts/sync_block.py   --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md --targets targets.txt
-#   python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md --targets targets.txt
+#   python3 scripts/sync_block.py   --block configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md --targets targets.txt
+#   python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md --targets targets.txt
 #
 # 格式：每行一个文件路径。支持：
 #   - 以 # 开头的注释行与空行会被忽略
@@ -24,7 +24,7 @@
 #   ls /mnt/d/projects/*/AGENTS.md > local/targets.txt
 
 # ── 本项目自身的块文件（永远参与校验，用于自检）──
-configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md
+configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md
 
 # ── 仓库内其他块副本：必须与权威块字节一致，否则 CI 失败 ──
 # 这是本仓库的真实不变量：改了权威块却忘了同步骨架，会被 CI 直接拦下。

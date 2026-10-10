@@ -14,7 +14,7 @@ rc=0
 
 echo "── [1/2] 托管块一致性 ──"
 python3 scripts/verify_blocks.py \
-  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md --targets targets.txt || rc=1
+  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md --targets targets.txt || rc=1
 echo
 
 echo "── [2/2] 仓库一致性 ──"
