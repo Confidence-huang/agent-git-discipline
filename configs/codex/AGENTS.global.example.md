@@ -48,8 +48,8 @@
   `git push --force` 禁止，确需时只用 `--force-with-lease` 且限自己的分支。
 - 秘密一旦提交进历史极难清除（需 `git-filter-repo`/BFG 重写历史，
   而重写历史本身需要单独授权），防线必须前移到"根本不提交"；`.gitignore` 本身应入库。
-- 项目级 `AGENTS.md` 应包含 `GLOBAL-PROJECT-LOG-RULES` 托管块 **v3**
-  （配对标记 `:START v3` … `:END`）。本节规则是该块的全局投影。
+- 项目级 `AGENTS.md` 应包含 `GLOBAL-PROJECT-LOG-RULES` 托管块 **v4**
+  （配对标记 `:START v4` … `:END`）。本节规则是该块的全局投影。
 
 ---
 

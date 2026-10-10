@@ -31,7 +31,7 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
 ## 设计四要素
 
 1. **单一事实源** —— 一份权威块模板 + 各项目的投影，块内容**字节一致**可用 SHA256 机械验证。
-2. **配对标记 + 版本号** —— `<!-- GLOBAL-PROJECT-LOG-RULES:START v3 -->` … `:END`，
+2. **配对标记 + 版本号** —— `<!-- GLOBAL-PROJECT-LOG-RULES:START v4 -->` … `:END`，
    整段可替换，不再靠人眼定位块边界。
 3. **平台中立** —— 块内不写死盘符或路径，按平台列出取值，使同一份字节在
    WSL / Windows / macOS 通用。
@@ -78,7 +78,7 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
 
 ### 2. 给项目加托管块
 
-把 [`configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md`](configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md)
+把 [`configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md`](configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md)
 的正文整段复制进项目的 `AGENTS.md`，或直接用骨架：
 
 ```bash
@@ -141,7 +141,7 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 
 ```bash
 python3 scripts/verify_blocks.py \
-  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md --targets targets.txt
+  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md --targets targets.txt
 python3 scripts/check_repo.py
 ```
 
@@ -185,12 +185,12 @@ git config core.hooksPath .githooks
 
 ### ⚠️ 校验要用**你自己的**块文件
 
-`configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md` 是**带占位符的模板**。
+`configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md` 是**带占位符的模板**。
 替换占位符后，请把它（或你的副本）作为**权威块**，再用它校验部署：
 
 ```bash
 # 正确：用你自己的块
-python3 scripts/verify_blocks.py --block local/GLOBAL-PROJECT-LOG-RULES.v3.filled.md \
+python3 scripts/verify_blocks.py --block local/GLOBAL-PROJECT-LOG-RULES.v4.filled.md \
         --targets local/targets.txt
 
 # 错误：用仓库里的公开模板去校验已填值的部署 —— 必然报"不一致"

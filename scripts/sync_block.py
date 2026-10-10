@@ -13,7 +13,7 @@
 用法
 ----
     # 预览
-    python3 scripts/sync_block.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \\
+    python3 scripts/sync_block.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md \\
             --targets targets.txt
 
     # 实际写入（可选先备份）
@@ -28,7 +28,7 @@ import re
 import shutil
 import sys
 
-# 配对标记（v3 推荐形态）。**版本号可缺省**：历史上有 13 个文件的 START 标记没有版本后缀
+# 配对标记（v4 推荐形态）。**版本号可缺省**：历史上有 13 个文件的 START 标记没有版本后缀
 # （见 docs/02-实践经验.md 坑 3），旧正则要求 v[\d.]+，于是这些文件一个都定位不到，
 # 只会打印「未找到托管块，跳过（需手工插入）」——它们因此长期无法被同步回来。
 PAT_PAIRED = re.compile(
