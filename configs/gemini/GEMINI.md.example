@@ -1,0 +1,16 @@
+# Gemini CLI 上下文入口（示例）
+
+> **用途**：把本文件复制为**项目根**的 `GEMINI.md`。
+>
+> **为什么需要它**：Gemini CLI 的默认上下文文件名是 `GEMINI.md`
+> （源码常量 `DEFAULT_CONTEXT_FILENAME = 'GEMINI.md'`）——**默认不读 `AGENTS.md`**。
+> 两种接法任选其一（可都留）：
+> 1. 本文件里写 `@AGENTS.md`（`@` 导入）；
+> 2. 配 `context.fileName`，见同目录 `settings.example.json`。
+>
+> 依据：<https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/gemini-md.md> ·
+> <https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md>
+>
+> 验证：启动后用 `/memory show` 确认托管块已在上下文里（`/memory reload` 可强制重扫）。
+
+@AGENTS.md

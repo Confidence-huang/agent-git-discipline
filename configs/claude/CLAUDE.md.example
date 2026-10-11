@@ -1,0 +1,12 @@
+# Claude Code 项目级规则入口（示例）
+
+> **用途**：把本文件复制为**项目根**的 `CLAUDE.md`。
+>
+> **为什么需要它**：Claude Code 默认 `claude-md-or-agents-md` ——
+> **只要工作目录或任一父目录存在 `CLAUDE.md`，它就不再读 `AGENTS.md`**
+> （含用户级 `~/.claude/CLAUDE.md`，因此"我配了全局 CLAUDE.md"反而可能让所有项目的托管块失效）。
+> 用 `@` 导入把托管块显式带进来，是最稳且跨平台的做法（Windows checkout 会把提交的软链退化，别用软链）。
+>
+> 依据：<https://code.claude.com/docs/en/memory> · `@` 导入最多 4 跳。
+
+@AGENTS.md

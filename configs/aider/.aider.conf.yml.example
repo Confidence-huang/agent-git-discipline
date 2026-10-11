@@ -1,0 +1,21 @@
+# Aider 配置示例（Git 纪律部分）
+#
+# 用途：把本文件复制为项目根的 `.aider.conf.yml`（搜索顺序：home → git 根 → 当前目录，后加载者优先）。
+#
+# 为什么必须显式配：Aider **不特殊对待 AGENTS.md**，没有"自动发现根 AGENTS.md"的机制；
+# 唯一途径是 `read:` 把它作为只读上下文加进来（也正合"托管块不许手改"）。
+# 依据：https://aider.chat/docs/usage/conventions.html · https://aider.chat/docs/config/aider_conf.html
+#
+# ⚠️ 行为层冲突（规则文本约束不了，必须显式治理）：
+#   Aider 默认 auto-commits: true、dirty-commits: true —— 它**自己会 commit**，
+#   与「原子提交 / 禁止宽范围暂存 / 第 N 次 git 编号回报」存在冲突。
+#   下面显式把它关掉，改由人/agent 按仓库纪律提交。改动前请先确认你接受这个取舍。
+#
+# ⚠️ Aider **没有技能机制**（官方文档 "skill" 命中 0；相关 PR 仍 Open）：
+#   本项目的 git-discipline 技能无法被 Aider 复用，只能靠这份纯文本规则。
+
+read:
+  - AGENTS.md
+
+auto-commits: false
+dirty-commits: false

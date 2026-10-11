@@ -1,0 +1,24 @@
+---
+description: Git 纪律（GLOBAL-PROJECT-LOG-RULES 托管块摘要）
+alwaysApply: true
+---
+
+# 本项目的 Git 纪律
+
+提交前必须遵守项目根 `AGENTS.md` 里 `GLOBAL-PROJECT-LOG-RULES` 托管块的规则，要点：
+
+- 原子提交：一个 commit 只做一件事；禁止 `git add .` / `git add -A`；混杂时 `git add -p`。
+- 本地 `git commit` 默认授权；**push 及一切远端写操作需单独授权**。
+- commit 后记「第 N 次 git」（`git rev-list --first-parent --count HEAD`）；
+  最终回复最后一条普通文本写 `已git：<仓库> 第 N 次 git（commit <短SHA>）`。
+- **推送结果以远端为准**：`git push` 的输出不可信，推送后必须 `git ls-remote` 核对。
+
+---
+
+<!--
+用法：复制为项目里的 .cursor/rules/git-discipline.mdc（Cursor 的 Project Rules **必须是 .mdc**，
+.rules 目录下的普通 .md 会被忽略）。frontmatter 三字段语义：
+alwaysApply: true → 总是注入；false + globs → 命中文件时附加；false + description → 由 Agent 判断。
+注意：Cursor **原生读根目录与子目录的 AGENTS.md**，所以本文件是"硬保险"而非必需品。
+依据：https://cursor.com/docs/rules
+-->
