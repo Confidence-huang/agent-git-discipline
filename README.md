@@ -52,7 +52,8 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
 │   ├── 02-实践经验.md            # 踩过的坑 / 已验证做法 / 未解决问题（含复现步骤）
 │   ├── 03-Agent适配.md           # 各 Agent 的配置文件、入口提示词、使用方法
 │   ├── 04-环境支持.md            # WSL / Windows / macOS 平台差异与陷阱
-│   └── 05-提交与PR流程.md        # 推送/PR 授权边界、分支判据、标题与描述规范
+│   ├── 05-提交与PR流程.md        # 推送/PR 授权边界、分支判据、标题与描述规范
+│   └── 06-未验证项的业界做法.md   # ⚠️ 那些没验证的项，别人怎么做（含许可证与依据 URL）
 ├── skills/git-discipline/       # 技能本体（Agent 可直接加载）
 │   ├── SKILL.md                 #   主规则：授权边界、原子提交、编号回报、回退分级
 │   └── references/              #   回退手册等按需加载的细节
@@ -60,7 +61,11 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
 │   ├── block/                   #   托管块权威模板
 │   ├── codex/                   #   Codex 全局规则示例
 │   ├── opencode/                #   opencode 全局规则示例
-│   └── codebuddy/               #   CodeBuddy / WorkBuddy 全局规则示例（CODEBUDDY.md）
+│   ├── codebuddy/               #   CodeBuddy / WorkBuddy 全局规则示例（CODEBUDDY.md）
+│   ├── claude/                  #   Claude Code 项目级 CLAUDE.md 示例（@AGENTS.md 导入）
+│   ├── cursor/                  #   Cursor .cursor/rules/*.mdc 示例
+│   ├── gemini/                  #   Gemini CLI GEMINI.md 与 settings.json 示例
+│   └── aider/                   #   Aider .aider.conf.yml 示例（read: AGENTS.md）
 ├── scripts/                     # 功能脚本
 │   ├── sync_block.py            #   把权威块同步进任意数量的项目
 │   ├── verify_blocks.py         #   校验各项目块是否字节一致（CI 可用）
@@ -117,6 +122,10 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 | opencode | `~/.config/opencode/AGENTS.md` + 项目 `AGENTS.md`（技能自动加载 `~/.agents/skills/`） | ✅ 已验证 |
 | DeepSeek Harness (DSH) | `<skill-root>/<name>/SKILL.md` | ✅ 已验证 |
 | CodeBuddy / WorkBuddy | 全局 `CODEBUDDY.md`（+ `CODEBUDDY.local.md`）+ 项目 `AGENTS.md` | 🟡 路径验证（入口与技能根实测，未跑端到端） |
+| Claude Code | 项目 `CLAUDE.md` 里写 `@AGENTS.md`（**默认不读 AGENTS.md**，样例见 `configs/claude/`） | ⚠️ 未验证（样例已按官方文档给出） |
+| Cursor | 根/子目录 `AGENTS.md` 原生读取；可选 `.cursor/rules/*.mdc`（见 `configs/cursor/`） | ⚠️ 未验证 |
+| Gemini CLI | `GEMINI.md` 里 `@AGENTS.md`，或配 `context.fileName`（见 `configs/gemini/`） | ⚠️ 未验证 |
+| Aider | `.aider.conf.yml` 的 `read: [AGENTS.md]`（**无技能机制**，见 `configs/aider/`） | ⚠️ 未验证 |
 | Claude Code / Cursor / Gemini CLI / Aider | 各自的规则文件 | ⚠️ 未验证（见文档） |
 
 ## 验证状态一览
@@ -128,15 +137,31 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   技能热加载（无需重启）、**opencode 的技能自动加载根是 `~/.agents/skills/`**
   （1.18.25 实测；`~/.config/opencode/skills/` **不是**发现根）、
   **Windows 侧技能入口必须用 Junction**（WSL 建的是 LX 软链，Windows 程序读不到）、
-  **公开仓库的分支保护 + PR 门禁**（实测直推 `main` 被 `GH006` 拒绝）
+  **公开仓库的分支保护 + PR 门禁**（实测直推 `main` 被 `GH006` 拒绝）、
+  **`git worktree` 的身份判据**（`--git-common-dir` 在主工作树返回**相对** `.git`、
+  linked worktree 返回**绝对路径** ⇒ 必须 `--path-format=absolute` + `realpath` 才能比；
+  实测同一分支二次检出被官方拒绝）、**入库钩子必须有执行位**（否则被静默忽略；
+  本仓库 `.githooks/pre-push` 已是 `-rwxr-xr-x`）
 - 🟡 **路径验证**：CodeBuddy / WorkBuddy —— 规则入口（`AGENTS.md` / `CODEBUDDY.md`）
   与三处技能根已实测，但**未跑端到端会话**确认规则真的生效
-- ⚠️ **未验证**：macOS 平台、`git worktree` 隔离、pre-commit 钩子强制、
-  **多人**协作的 PR 评审流程（本项目为单人仓库；PR 流程本身已在公开仓库实测三轮，
-  缺的是第二个人，见 [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) 第八节）、
-  Claude Code / Cursor / Gemini CLI / Aider 的规则入口
-- ❌ **已知未解决**：仅本地仓库无异地备份（见
-  [docs/02-实践经验.md](docs/02-实践经验.md) 第五节）
+- ⚠️ **未验证**：macOS 平台、`git worktree` 在**多 agent 并行**下的端到端回归、
+  pre-commit 钩子强制（客户端钩子只是早筛：官方有 `--no-verify`，且 `core.hooksPath`
+  **不在** Git protected configuration 名单里，还能 `-c core.hooksPath=/dev/null` 一次性禁掉）、
+  **多人**协作的 PR 评审流程（本项目为单人仓库——官方明确**作者不能批准自己的 PR**，
+  PR 流程本身已在公开仓库实测四轮，缺的是第二个人；见
+  [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) 第八节）、
+  Claude Code / Cursor / Gemini CLI / Aider 的**端到端规则生效**（本机只装了 Claude Code，
+  其 CLI 还需单独登录；样例见 `configs/`，但**样例 ≠ 实测**）
+- ❌ **已知未解决**：仅本地仓库无异地备份。本机**已有** `bak-local-archives`
+  （私有仓库 + systemd 定时打 `git bundle` 推 GitHub），但**覆盖不全**：实测全机 90 个 git 仓库里
+  **50 个既无远端、也不在它的清单里**（含 411 提交、95 提交那类），整棵 `CodexProjects/` 从未纳入；
+  且 bundle **覆盖不到** `~/.codex/AGENTS.md` 这类无 git 跟踪的用户级规则文件。
+  详见 [docs/02-实践经验.md](docs/02-实践经验.md) 第五节与
+  [docs/06-未验证项的业界做法.md](docs/06-未验证项的业界做法.md) §六
+
+> 每一项的**业界做法、官方依据 URL 与逐个核实的许可证**见
+> [docs/06-未验证项的业界做法.md](docs/06-未验证项的业界做法.md)；
+> 该文同时给出「哪些能照做、哪些仍不确定」。
 
 ## 持续集成
 
