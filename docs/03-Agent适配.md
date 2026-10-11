@@ -24,8 +24,9 @@
 | Agent | 规则入口 | 技能支持 | 验证状态 |
 |---|---|---|---|
 | **Codex**（OpenAI） | `$CODEX_HOME/AGENTS.md`（默认 `~/.codex/AGENTS.md`） | 读 `<root>/.agents/skills` | ✅ 实测验证 |
-| **opencode** | `~/.config/opencode/AGENTS.md` + 项目 `AGENTS.md` | `~/.config/opencode/skills/` | ✅ 实测验证 |
+| **opencode** | `~/.config/opencode/AGENTS.md` + 项目 `AGENTS.md` | **`~/.agents/skills/`**（1.18+ 自动加载；项目内 `.opencode/skills/`） | ✅ 实测验证 |
 | **DeepSeek Harness (DSH)** | ❌ **不读 `AGENTS.md`** | `~/.agents/skills` 或 `<projectRoot>/.agents/skills` | ✅ 实测验证 |
+| **CodeBuddy / WorkBuddy** | 全局 `CODEBUDDY.md`（+ `CODEBUDDY.local.md`）；项目 `AGENTS.md`（+ `AGENTS.mdc`） | `~/.workbuddy/skills/`、`~/.codebuddy/skills/`、`~/.agents/skills/`、插件市场 `~/.workbuddy/plugins/marketplaces/**/skills/` | 🟡 路径验证 |
 | **Claude Code** | `CLAUDE.md`（项目 + 用户级） | `.claude/skills/` | ⚠️ 文档依据 |
 | **Cursor** | `AGENTS.md` / `.cursor/rules/` | — | ⚠️ 文档依据 |
 | **Gemini CLI** | `AGENTS.md`（需在 `.gemini/settings.json` 声明） | — | ⚠️ 文档依据 |
@@ -98,12 +99,19 @@ cp configs/opencode/AGENTS.global.example.md ~/.config/opencode/AGENTS.md
 cp templates/AGENTS.project-skeleton.md /path/to/project/AGENTS.md
 ```
 
-**技能安装**（opencode 按技能建逐项链接，指向共用实体根）
+**技能安装**（opencode 1.18+ **自动加载** `~/.agents/skills/`，不需要建 `~/.config/opencode/skills/`）
 
 ```bash
-# 实体放共用根，opencode 侧建链接
-ln -s <skills-root>/git-discipline ~/.config/opencode/skills/git-discipline
+# 实体放共用根：DSH / Codex / opencode / WorkBuddy 都从这里发现
+ln -s <skills-root>/git-discipline ~/.agents/skills/git-discipline
 ```
+
+> ⚠️ **实测纠正（2026-10-12，opencode 1.18.25）**：旧文档写的 `~/.config/opencode/skills/`
+> **不是**技能发现根。bundle 里的自动加载列表只有 `~/.agents/skills/<name>/SKILL.md` 与
+> `~/.claude/skills/<name>/SKILL.md`（另有项目级 `.opencode/skills/`）。
+> 更糟的是**从 WSL 用 `ln -s` 往 `/mnt/c` 下建链接，Windows 侧程序读不到**
+> （LX 软链对 Windows 不可解析，实测 `Test-Path ...\SKILL.md` = False）；
+> **Windows 侧必须用 `New-Item -ItemType Junction`**（Junction 实测可读）。
 
 **入口提示词**
 
@@ -170,6 +178,32 @@ ln -s <skills-root>/git-discipline ~/.agents/skills/git-discipline
   因此**改正文无需重生效**，但改 frontmatter 会触发重新发现。
 - `references/`、`assets/` 等**子目录下的编辑不触发**热加载。
 - 由于技能优先于 `AGENTS.md` 生效，**两处规则若冲突，以技能为准**。
+
+---
+
+### 3.1 CodeBuddy / WorkBuddy（Windows 侧）🟡 路径验证
+
+本机另有一个 CodeBuddy 系的 Windows 编码应用（WorkBuddy）。实测其 CLI bundle
+（`resources/app.asar.unpacked/cli/dist/codebuddy-headless.js`）：
+
+- **读 `AGENTS.md`**（bundle 里有 `e_="AGENTS.md"` / `AGENTS.mdc` 与 `resolveMemoryFileNames()`）
+  → 项目级**托管块开箱即用**。
+- **全局记忆文件是 `CODEBUDDY.md`**（+ `CODEBUDDY.local.md`），**不是** `AGENTS.md`。
+- **技能根**：`~/.workbuddy/skills/`、`~/.codebuddy/skills/`、`~/.agents/skills/`，
+  以及插件市场 `~/.workbuddy/plugins/marketplaces/*/plugins/*/skills/`。
+- 它把 `CODEBUDDY.md`、`.codebuddy/settings*.json`、`.codebuddy/rules/` 视为
+  "控制 agent 自身行为"的**受保护文件**——改动前按本仓库备份规则处理。
+
+**接入方式**（与 DSH 同构：技能 + 托管块）
+
+```powershell
+# Windows 侧建 Junction；不要用 WSL 的 ln -s（Windows 程序读不到 LX 软链）
+New-Item -ItemType Junction `
+  -Path   "$env:USERPROFILE\.workbuddy\skills\git-discipline" `
+  -Target "D:\CodexProjects\_skills\sources\agent-git-discipline\skills\git-discipline"
+```
+
+**未验证**：没有让 WorkBuddy 实际跑一遍会话确认规则生效，故标 🟡 路径验证而非 ✅ 实测验证。
 
 ---
 
