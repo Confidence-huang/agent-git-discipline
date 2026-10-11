@@ -1,0 +1,9 @@
+# 责任田（单人仓库下的"形式门禁"）
+#
+# 用法：仓库 Settings → Branches/Rulesets 里勾 "Require review from Code Owners"。
+# ⚠️ 诚实的边界：GitHub 官方明确 **PR 作者不能批准自己的 PR**，所以单人仓库里
+#    required approvals 只会变成"靠 admin 旁路豁免"——保留 PR 留痕，但不是真门禁。
+#    真门禁需要第二身份（第二账号 / App 作 required check 来源），见 docs/06 §五。
+
+*                     @Confidence-huang
+/.github/CODEOWNERS   @Confidence-huang
