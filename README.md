@@ -58,7 +58,7 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
 │   ├── SKILL.md                 #   主规则：授权边界、原子提交、编号回报、回退分级
 │   └── references/              #   回退手册等按需加载的细节
 ├── configs/                     # 示例配置（已脱敏）
-│   ├── block/                   #   托管块权威模板
+│   ├── block/                   #   托管块权威模板（**v4 生效**；v5 已发布待分批推广）
 │   ├── codex/                   #   Codex 全局规则示例
 │   ├── opencode/                #   opencode 全局规则示例
 │   ├── codebuddy/               #   CodeBuddy / WorkBuddy 全局规则示例（CODEBUDDY.md）
