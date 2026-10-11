@@ -91,7 +91,18 @@
   `git reset --hard` / `git clean` 属危险操作需授权；`git reflog` 是最后保险。
 - 回退前先预览（`git clean -nd`）或存档（`git stash -u`）。
 
-### 9.5 与 §7.1 的关系
+### 9.5 推送核验与失败处置
+
+- ⚠️ **`git push` 的输出不可信**：实测出现过"报错的同时打印 `Everything up-to-date`"，
+  而远端**实际没收到**。**以远端为准**——推送后必须用 `git ls-remote origin <branch>`
+  （或 `git fetch` + 比对 SHA）核对；核对不一致就当作**失败**，不得回报"已推送"。
+- 链路抖动导致的中断（`GnuTLS recv error (-110)` / `send-pack: unexpected disconnect` /
+  `Empty reply from server`）属**可重试错误**：先
+  `git -c http.version=HTTP/1.1 -c pack.threads=1 push` 重试（关 HTTP/2 多路复用 + 单流 pack），
+  连续失败再换出口或稍后重试。
+- **禁止用 `--no-verify` 绕过门禁**来解决推送问题。
+
+### 9.6 与 §7.1 的关系
 
 **本地 commit 走本节（默认授权）**；其余 git 写操作（branch/reset/tag/push/PR/删除）
 仍走 §7.1 拦截链。
