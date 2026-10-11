@@ -198,9 +198,10 @@ ln -s <skills-root>/git-discipline ~/.agents/skills/git-discipline
 
 ```powershell
 # Windows 侧建 Junction；不要用 WSL 的 ln -s（Windows 程序读不到 LX 软链）
+# <skills-root> 请替换为你自己的技能实体根（示例已脱敏）
 New-Item -ItemType Junction `
   -Path   "$env:USERPROFILE\.workbuddy\skills\git-discipline" `
-  -Target "D:\CodexProjects\_skills\sources\agent-git-discipline\skills\git-discipline"
+  -Target "<skills-root>\git-discipline"
 ```
 
 **未验证**：没有让 WorkBuddy 实际跑一遍会话确认规则生效，故标 🟡 路径验证而非 ✅ 实测验证。
