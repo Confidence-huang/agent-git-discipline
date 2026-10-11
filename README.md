@@ -126,6 +126,7 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 | Cursor | 根/子目录 `AGENTS.md` 原生读取；可选 `.cursor/rules/*.mdc`（见 `configs/cursor/`） | ⚠️ 未验证 |
 | Gemini CLI | `GEMINI.md` 里 `@AGENTS.md`，或配 `context.fileName`（见 `configs/gemini/`） | ⚠️ 未验证 |
 | Aider | `.aider.conf.yml` 的 `read: [AGENTS.md]`（**无技能机制**，见 `configs/aider/`） | ⚠️ 未验证 |
+| GitHub Copilot coding agent | 根 `AGENTS.md` **零配置生效**（含嵌套）；技能走 `.agents/skills/` | ⚠️ 未验证（官方文档口径） |
 | Claude Code / Cursor / Gemini CLI / Aider | 各自的规则文件 | ⚠️ 未验证（见文档） |
 
 ## 验证状态一览
