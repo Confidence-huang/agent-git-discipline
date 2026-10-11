@@ -4,7 +4,7 @@
 
 > 让 AI 编码 Agent **每次改动都留下可回退的点**，并把这条纪律机械地同步到多个 Agent、多个项目、多个平台。
 
-写给同时使用多个 AI 编码 Agent（Codex / opencode / Claude Code / Cursor / …）的人：
+写给同时使用多个 AI 编码 Agent（Codex / opencode / DeepSeek Harness / CodeBuddy·WorkBuddy / Claude Code / Cursor / …）的人：
 规则写在五个地方、格式各不相同、改了一处忘了另一处，最后**一处都不可靠**。
 
 ---
@@ -28,7 +28,7 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
 | **规则自相矛盾** | 一处写"日志机制永不 commit"，另一处写"原子改动立即 commit" | Agent 选择不提交，**回退点为零** |
 | **规则格式漂移** | 同一份托管块在 22 个项目里长出 5 种标记格式 | 无法机械同步，每次升级只能人眼比对 |
 
-## 设计四要素
+## 设计五要素
 
 1. **单一事实源** —— 一份权威块模板 + 各项目的投影，块内容**字节一致**可用 SHA256 机械验证。
 2. **配对标记 + 版本号** —— `<!-- GLOBAL-PROJECT-LOG-RULES:START v4 -->` … `:END`，
@@ -37,6 +37,10 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
    WSL / Windows / macOS 通用。
 4. **可回退编号** —— 每次 commit 记「第 N 次 git」，把 SHA 包装成人能用的序号；
    你说"退回到第 20 次"即可定位。
+5. **推送以远端为准** —— `git push` 的**输出不可信**：实测出现过"报错的同时打印
+   `Everything up-to-date`"而远端**实际没收到**。推送后必须 `git ls-remote origin <branch>`
+   （或 `git fetch` + 比对 SHA）核对；不一致按**失败**处理。链路抖动属可重试错误，
+   命令与处置见 [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) §三 步骤 3。
 
 ## 仓库结构
 
@@ -55,7 +59,8 @@ git **撤不掉"未跟踪的新文件"**。如果 Agent 新建了若干文件却
 ├── configs/                     # 示例配置（已脱敏）
 │   ├── block/                   #   托管块权威模板
 │   ├── codex/                   #   Codex 全局规则示例
-│   └── opencode/                #   opencode 全局规则示例
+│   ├── opencode/                #   opencode 全局规则示例
+│   └── codebuddy/               #   CodeBuddy / WorkBuddy 全局规则示例（CODEBUDDY.md）
 ├── scripts/                     # 功能脚本
 │   ├── sync_block.py            #   把权威块同步进任意数量的项目
 │   ├── verify_blocks.py         #   校验各项目块是否字节一致（CI 可用）
@@ -109,8 +114,9 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 | Agent | 规则入口 | 状态 |
 |---|---|---|
 | Codex (OpenAI) | `$CODEX_HOME/AGENTS.md` | ✅ 已验证 |
-| opencode | `~/.config/opencode/AGENTS.md` + 项目 `AGENTS.md` | ✅ 已验证 |
+| opencode | `~/.config/opencode/AGENTS.md` + 项目 `AGENTS.md`（技能自动加载 `~/.agents/skills/`） | ✅ 已验证 |
 | DeepSeek Harness (DSH) | `<skill-root>/<name>/SKILL.md` | ✅ 已验证 |
+| CodeBuddy / WorkBuddy | 全局 `CODEBUDDY.md`（+ `CODEBUDDY.local.md`）+ 项目 `AGENTS.md` | 🟡 路径验证（入口与技能根实测，未跑端到端） |
 | Claude Code / Cursor / Gemini CLI / Aider | 各自的规则文件 | ⚠️ 未验证（见文档） |
 
 ## 验证状态一览
@@ -119,10 +125,15 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 
 - ✅ **已验证**：块字节一致性校验、四条回退链路（`revert` / 按编号反查 / 单文件恢复 /
   `reflog` 兜底）、Git 身份缺失导致无法提交、暂存区滞留、DrvFs `cp -p` 失败、
-  技能热加载（无需重启）
+  技能热加载（无需重启）、**opencode 的技能自动加载根是 `~/.agents/skills/`**
+  （1.18.25 实测；`~/.config/opencode/skills/` **不是**发现根）、
+  **Windows 侧技能入口必须用 Junction**（WSL 建的是 LX 软链，Windows 程序读不到）、
+  **公开仓库的分支保护 + PR 门禁**（实测直推 `main` 被 `GH006` 拒绝）
+- 🟡 **路径验证**：CodeBuddy / WorkBuddy —— 规则入口（`AGENTS.md` / `CODEBUDDY.md`）
+  与三处技能根已实测，但**未跑端到端会话**确认规则真的生效
 - ⚠️ **未验证**：macOS 平台、`git worktree` 隔离、pre-commit 钩子强制、
-  多人协作的 PR 评审流程（本项目为单人仓库，见
-  [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) 第八节）、
+  **多人**协作的 PR 评审流程（本项目为单人仓库；PR 流程本身已在公开仓库实测三轮，
+  缺的是第二个人，见 [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) 第八节）、
   Claude Code / Cursor / Gemini CLI / Aider 的规则入口
 - ❌ **已知未解决**：仅本地仓库无异地备份（见
   [docs/02-实践经验.md](docs/02-实践经验.md) 第五节）
@@ -161,6 +172,18 @@ git config core.hooksPath .githooks
 （API 返回 `Upgrade to GitHub Pro or make this repository public`），
 客户端钩子是唯一能在本机落地的强制点。逃生口是 `git push --no-verify`——
 门禁是减速带，不是牢门。详见 [docs/05-提交与PR流程.md §六](docs/05-提交与PR流程.md)。
+
+**本仓库自身是例外**：它是**公开**仓库，因此**有**服务端分支保护——
+`main` + `enforce_admins: true` + 必需检查 `一致性检查`。直推会被服务端拒绝：
+
+```
+remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote: - Required status check "一致性检查" is expected.
+```
+
+所以对本仓库的改动一律走：**建分支 → push → 开 PR → 等 CI 绿 → rebase-and-merge**
+（`--delete-branch=false` 保留源分支；合并后的收尾见
+[docs/05-提交与PR流程.md §6.2/§6.3](docs/05-提交与PR流程.md)）。
 
 提交与 PR 的完整流程——授权边界、什么时候才该开 PR、标题与描述模板、PR 阶段的回退——
 见 [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md)。
