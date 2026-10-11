@@ -38,9 +38,10 @@ WorkBuddy / CodeBuddy 的技能根包含 `%USERPROFILE%\.workbuddy\skills\`、
 
 ```powershell
 # 不要用 WSL 的 ln -s 往 /mnt/c 建链接（LX 软链 Windows 程序读不到）
+# <skills-root> 请替换为你自己的技能实体根（示例已脱敏）
 New-Item -ItemType Junction `
   -Path   "$env:USERPROFILE\.workbuddy\skills\git-discipline" `
-  -Target "D:\CodexProjects\_skills\sources\agent-git-discipline\skills\git-discipline"
+  -Target "<skills-root>\git-discipline"
 ```
 
 ---
