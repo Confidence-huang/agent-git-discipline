@@ -1,0 +1,29 @@
+name: Commit messages
+
+# 只跑 PR：本仓库 main 有分支保护，所有改动都经 PR。
+# 为什么需要它：GitHub 的 rulesets 里 **提交元数据规则（正则约束 commit message）
+# 是 Enterprise 专属**（官方原文），免费 public 仓库用不了它强制 Conventional Commits，
+# 所以用 CI 补这一环。见 docs/06 §五。
+on:
+  pull_request:
+
+jobs:
+  commitlint:
+    name: 提交信息规范
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0          # 必须：算 merge-base 需要完整历史
+
+      # 刻意不用第三方 action：直接 npx 拉官方包，版本显式可审。
+      # 依赖 runner 自带的 Node/npx（ubuntu-latest 已内置），故不额外 setup-node。
+      - name: 校验 Conventional Commits
+        run: |
+          set -eu
+          base="origin/${{ github.base_ref }}"
+          from="$(git merge-base "$base" HEAD)"
+          echo "检查范围：$from..HEAD"
+          git log --format='  %h %s' "$from..HEAD"
+          npx --yes -p @commitlint/cli@19 commitlint --from "$from" --to HEAD --verbose
+          echo "✅ 提交信息符合 Conventional Commits"
