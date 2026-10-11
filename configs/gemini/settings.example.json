@@ -1,0 +1,6 @@
+{
+  "_comment": "Gemini CLI 上下文文件配置示例：复制片段到 .gemini/settings.json（项目级）或 ~/.gemini/settings.json（用户级）。context.fileName 接受 string 或 string[]；默认 undefined 时回落到 GEMINI.md。多值的精确语义（全部加载 vs 按序回退）官方未写明，落地前用 /memory show 实测。",
+  "context": {
+    "fileName": ["AGENTS.md", "GEMINI.md"]
+  }
+}
