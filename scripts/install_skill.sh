@@ -17,7 +17,7 @@
 #   agents-home     ~/.agents/skills/<name>                 （DSH rank 500 / 跨 Agent 共用）
 #   dsh-home        $DSH_HOME/skills/<name>                 （DSH rank 400，默认 ~/.dsh）
 #   project         <project-root>/.agents/skills/<name>    （DSH rank 200，就近优先）
-#   opencode        ~/.config/opencode/skills/<name>
+#   opencode        ~/.agents/skills/<name>                 （1.18+ 自动加载该根，见 docs/03）
 #   codex-entities  <entities-root>/<name>                  （技能实体根；Codex 常有整目录 junction）
 #   codex-home      $CODEX_HOME/skills/<name>               （仅在 Codex 用独立技能目录时需要）
 
@@ -69,7 +69,9 @@ fi
 case "$TARGET" in
   agents-home)    DEST_DIR="$HOME/.agents/skills" ;;
   dsh-home)       DEST_DIR="${DSH_HOME:-$HOME/.dsh}/skills" ;;
-  opencode)       DEST_DIR="$HOME/.config/opencode/skills" ;;
+  # 注意：opencode 1.18+ 的自动加载根是 ~/.agents/skills（实测 2026-10-12），
+  # 旧的 ~/.config/opencode/skills 不是发现根 —— 这里保留为等价别名，避免再次装到无效位置。
+  opencode)       DEST_DIR="$HOME/.agents/skills" ;;
   codex-home)     DEST_DIR="${CODEX_HOME:-$HOME/.codex}/skills" ;;
   project)
     [ -n "$PROJECT_ROOT" ] || { echo "❌ --target project 需要 --project-root" >&2; exit 1; }
@@ -114,6 +116,15 @@ mkdir -p "$DEST_DIR"
 if [ "$METHOD" = "link" ]; then
   ln -s "$SOURCE" "$DEST"
   echo "  ✅ 已建符号链接"
+  # 为什么警告：从 WSL 往 /mnt/c、/mnt/d 建的是 LX 软链，Windows 程序**读不到**
+  # （实测 Test-Path ...\SKILL.md = False）。Windows 侧必须用 Junction。
+  case "$DEST" in
+    /mnt/[a-z]/*)
+      echo "  ⚠️  目标在 Windows 盘上：Linux 软链对 Windows 程序不可解析。"
+      echo "      请在 Windows 侧改用 Junction，例如（pwsh）："
+      echo "      New-Item -ItemType Junction -Path \"<Windows 目标>\" -Target \"<Windows 实体根>\""
+      ;;
+  esac
 else
   # 刻意用 cp 而非 cp -a：DrvFs 等文件系统不支持保留时间戳，
   # cp -a/-p 会以 "Operation not permitted" 失败（见 docs/02-实践经验.md 坑 8）
