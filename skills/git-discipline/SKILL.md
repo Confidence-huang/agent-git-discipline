@@ -1,5 +1,6 @@
 ---
 name: git-discipline
+license: MIT
 description: 强制 Git 纪律与可回退性，任何涉及代码、脚本、配置或规则文件改动的任务都必须遵循。要求改动前核对仓库边界与工作树、原子提交、禁止宽范围暂存、以「第 N 次 git」编号回报、失败时如实声明 GIT_BLOCKED、push 后以 ls-remote 核对远端（push 输出不可信），并规定哪些 git 动作已默认授权、哪些必须单独确认。当涉及 git commit、git add、回退与回滚、分支、push、版本管理、PROJECT_LOG 更新、AGENTS.md 托管块、改动前基线备份时触发。
 ---
 
