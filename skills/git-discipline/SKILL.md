@@ -1,6 +1,6 @@
 ---
 name: git-discipline
-description: 强制 Git 纪律与可回退性，任何涉及代码、脚本、配置或规则文件改动的任务都必须遵循。要求改动前核对仓库边界与工作树、原子提交、禁止宽范围暂存、以「第 N 次 git」编号回报、失败时如实声明 GIT_BLOCKED，并规定哪些 git 动作已默认授权、哪些必须单独确认。当涉及 git commit、git add、回退与回滚、分支、push、版本管理、PROJECT_LOG 更新、AGENTS.md 托管块、改动前基线备份时触发。
+description: 强制 Git 纪律与可回退性，任何涉及代码、脚本、配置或规则文件改动的任务都必须遵循。要求改动前核对仓库边界与工作树、原子提交、禁止宽范围暂存、以「第 N 次 git」编号回报、失败时如实声明 GIT_BLOCKED、push 后以 ls-remote 核对远端（push 输出不可信），并规定哪些 git 动作已默认授权、哪些必须单独确认。当涉及 git commit、git add、回退与回滚、分支、push、版本管理、PROJECT_LOG 更新、AGENTS.md 托管块、改动前基线备份时触发。
 ---
 
 # Git 纪律
@@ -39,6 +39,18 @@ description: 强制 Git 纪律与可回退性，任何涉及代码、脚本、�
 >
 > 完整流程（**何时才该开 PR**、分支判据、标题与描述规范、PR 阶段回退）见仓库
 > `docs/05-提交与PR流程.md`——本技能被拷贝安装后 `docs/` 不在包内，故此处只作文本引用。
+
+### 1.1 推送核验与失败处置（push 的输出不可信）
+
+- ⚠️ **`git push` 的输出不可信**：实测出现过"报错的同时打印 `Everything up-to-date`"，
+  而远端**实际没收到**。**以远端为准**——推送后必须用 `git ls-remote origin <branch>`
+  （或 `git fetch` + 比对 SHA）核对；核对不一致就当作**失败**，不得回报"已推送"。
+- 链路抖动导致的中断（`GnuTLS recv error (-110)` / `send-pack: unexpected disconnect` /
+  `Empty reply from server`）属**可重试错误**：先
+  `git -c http.version=HTTP/1.1 -c pack.threads=1 push` 重试（关掉 HTTP/2 多路复用 + 单流 pack），
+  连续失败再换出口/稍后重试。
+- **禁止用 `--no-verify` 绕过门禁**来"解决"推送问题——那等于把"门禁没过"伪装成"推上去了"。
+- 完整实战记录与处置步骤见仓库 `docs/05-提交与PR流程.md`（步骤 3）与 `docs/02-实践经验.md`。
 
 ## 2. 改动前：核对仓库边界
 
@@ -147,6 +159,7 @@ git rev-list --first-parent --count HEAD
 - ❌ 积攒多轮改动一次混合提交
 - ❌ 未提交就声称任务完成
 - ❌ 提交失败后沉默或伪造编号
+- ❌ 把 `git push` 的成功输出当成"已推送"（必须以 `git ls-remote` 核对远端）
 - ❌ 对已推送历史做 `rebase` / `reset` / `--force`
 - ❌ 未经授权新建分支、切换分支、打 tag、push
 - ❌ 在不确定仓库边界时直接改代码

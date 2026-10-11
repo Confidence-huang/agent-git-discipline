@@ -50,6 +50,13 @@
   而重写历史本身需要单独授权），防线必须前移到"根本不提交"；`.gitignore` 本身应入库。
 - 项目级 `AGENTS.md` 应包含 `GLOBAL-PROJECT-LOG-RULES` 托管块 **v4**
   （配对标记 `:START v4` … `:END`）。本节规则是该块的全局投影。
+- **推送结果以远端为准**：`git push` 的输出不可信，实测出现过"报错的同时打印
+  `Everything up-to-date`"而远端实际没收到；推送后必须用 `git ls-remote origin <branch>`
+  （或 `git fetch` + 比对 SHA）核对远端，不一致就当作失败、不得回报"已推送"。
+  链路抖动导致的中断（`GnuTLS recv error (-110)` / `send-pack: unexpected disconnect` /
+  `Empty reply from server`）属可重试错误：先
+  `git -c http.version=HTTP/1.1 -c pack.threads=1 push` 重试（关 HTTP/2 多路复用 + 单流 pack），
+  连续失败再换出口或稍后重试；**禁止用 `--no-verify` 绕过门禁**来解决推送问题。
 
 ---
 
