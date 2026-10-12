@@ -25,7 +25,7 @@
 
 ```bash
 python3 scripts/verify_blocks.py \
-  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md --targets targets.txt
+  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v5.md --targets targets.txt
 python3 scripts/check_repo.py
 ```
 
