@@ -10,11 +10,20 @@
 
 `PROJECT_LOG.md` 是唯一跨会话连续性入口与当前状态事实来源。进入项目先读它，再读本文件。
 
-<!-- GLOBAL-PROJECT-LOG-RULES:START v4 -->
-## GLOBAL-PROJECT-LOG-RULES 托管规则块（v4）
+<!-- GLOBAL-PROJECT-LOG-RULES:START v5 -->
+## GLOBAL-PROJECT-LOG-RULES 托管规则块（v5）
 
 ### 身份与范围
-- 本块适用于本文件所在的**本仓库**，以及规范化后 Git common dir 与该仓库完全一致的 worktree；路径名、标记文件、remote 名或提交本身都不能单独证明身份。
+- 本块适用于本文件所在的**本仓库**，以及满足以下条件的 linked worktree：
+  `git rev-parse --path-format=absolute --git-common-dir` 的输出，与对本仓库根执行同一命令的输出，
+  去掉尾随 `/` 并解析 symlink 后**逐字节相同**。路径名、标记文件、remote 名或提交本身都不能单独证明身份。
+  - **边界（有意为之，别当 bug）**：bare 仓库下 common dir 退化为 git dir；**submodule 的 common dir 与父仓不同**，
+    故按本判据子模块算**独立仓库**；判定前先 `unset $(git rev-parse --local-env-vars)`——
+    `GIT_DIR`/`GIT_COMMON_DIR` 被污染时 `rev-parse` 会输出环境变量值而非真实路径。
+  - `worktree.useRelativePaths`（= `extensions.relativeWorktrees`，git 2.48+）会让旧 git 与旧工具链
+    无法识别该 worktree，**默认不要开**。
+  - 并行使用：**一个 worktree 一个分支**（同一分支二次检出会被 git 拒绝）；
+    长任务或网络盘上的 worktree 用 `git worktree add --lock --reason "<id>"`，否则管理条目可能被 prune。
 - `PROJECT_LOG.md` 是唯一跨会话连续性入口与当前状态事实来源。进入项目先读 `PROJECT_LOG.md`，再读本文件，再读 live Git 状态。
 - 用户当前会话中的明确指令与本块冲突时，**以用户明确指令为准**。
 

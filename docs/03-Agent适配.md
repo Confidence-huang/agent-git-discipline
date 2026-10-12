@@ -121,7 +121,7 @@ ln -s <skills-root>/git-discipline ~/.agents/skills/git-discipline
 **入口提示词**
 
 ```
-执行纪律与 Git 闭环见全局 AGENTS.md §9；本项目托管块已含 v4 规则。
+执行纪律与 Git 闭环见全局 AGENTS.md §9；本项目托管块已含 v5 规则。
 ```
 
 **验证证据**：会话记录中出现 `提交完成（第 29 次 git）` 形式的回报，
@@ -292,7 +292,7 @@ New-Item -ItemType Junction `
 
 ```bash
 # 把托管块复制进 CLAUDE.md（Claude Code 不读 AGENTS.md）
-cat configs/block/GLOBAL-PROJECT-LOG-RULES.v4.md >> /path/to/project/CLAUDE.md
+cat configs/block/GLOBAL-PROJECT-LOG-RULES.v5.md >> /path/to/project/CLAUDE.md
 ```
 
 **兼容技巧**：若希望 `AGENTS.md` 与 `CLAUDE.md` 共用一份内容，可用符号链接：
