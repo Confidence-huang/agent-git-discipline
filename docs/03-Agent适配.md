@@ -213,10 +213,10 @@ ln -s <skills-root>/git-discipline ~/.agents/skills/git-discipline
 | 来源 | 路径 | 依据 |
 |---|---|---|
 | 应用级（WorkBuddy 系） | `%USERPROFILE%\.workbuddy\skills\` | 应用自己的技能缓存 `.workbuddy\.skill-list-cache.json`：48 条里 `git-discipline` 的 `filePath` 在此，`source=userSettings` |
-| 应用级（CodeBuddy CLI 系） | `%USERPROFILE%\.codebuddy\skills\` | bundle 里 `PathUtils.getHomeDir()` 随产品品牌变 |
+| 应用级（CodeBuddy CLI 系） | `%USERPROFILE%\.codebuddy\skills\` | bundle 里 `PathUtils.getHomeDir()` 随产品品牌变；**桌面应用不扫它**（2026-10-12 受控实验：只放该根的探针技能未被发现），它服务的是把同一份 bundle 当 CLI 起（`cbc`）的入口——那条路要登录，本机未做端到端 |
 | 项目级 | `<项目>\.codebuddy\skills\` | bundle `getProjectSkillsDir()` |
 | 插件市场 | `…\plugins\marketplaces\*\plugins\*\skills\`、`…\.workbuddy\skills-marketplace\`、内置 `…\resources\plugins\workbuddy-builtin\skills\` | 应用缓存里 48 条技能的实际分布 |
-| ⚠️ 未证实 | `%USERPROFILE%\.agents\skills\` | 它在本 bundle 里只出现在"允许写 / 排除备份"清单，**未见作为技能发现根**（旧版本节把它列为技能根，属误读，2026-10-12 更正） |
+| ❌ **已否证**：`~/.agents/skills` | `%USERPROFILE%\.agents\skills\` | **受控实验（2026-10-12）**：新技能只放该根 → **不被发现**；同一时刻放 `%USERPROFILE%\.workbuddy\skills\` 的对照技能被发现（应用缓存 48 → 49 条，删回后 48）。bundle 里该路径也只出现在"允许写 / 排除备份"清单（旧版本节把它列为技能根，属误读） |
 
 **接入方式**（与 DSH 同构：技能 + 托管块）
 
@@ -250,6 +250,17 @@ New-Item -ItemType Junction `
 3. 回报写成托管块规定的形态 `已git：D:/Workbuddy project/_wb-e2e-verify 第 3 次 git（commit 6c21188）`，
    与 `git rev-list --first-parent --count HEAD` = 3 一致；
 4. 主动声明「push / 远端核对属需单独授权，故未执行」——与 v4 的授权边界一致。
+
+同日补做**技能根受控实验**（三个一次性探针技能，各放一个根，验完即删）：
+
+| 探针放置位置 | 是否被应用发现 |
+|---|---|
+| `%USERPROFILE%\.workbuddy\skills\`（对照组） | ✅ 发现（应用缓存 48 → 49 条） |
+| `%USERPROFILE%\.agents\skills\` | ❌ 未发现 |
+| `%USERPROFILE%\.codebuddy\skills\` | ❌ 未发现 |
+
+删掉三个探针后缓存回到 48 条、无残留 ⇒ 桌面应用的技能发现根**只有** `.workbuddy\skills`
+（外加技能市场与内置插件目录）；`.codebuddy\skills` 服务的是 CLI 入口，`.agents\skills` 则完全无关。
 
 ---
 

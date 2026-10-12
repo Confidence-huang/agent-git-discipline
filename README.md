@@ -147,7 +147,8 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   被原样复述、它自行按托管块做了原子提交并写成 `已git：<仓库> 第 N 次 git（commit …）` 形态，
   编号与 `git rev-list --first-parent --count HEAD` 一致；同时**推翻**两处旧结论——
   用户级入口是 `%USERPROFILE%\.codebuddy\CODEBUDDY.md`（不是 `.workbuddy\`）、
-  `%USERPROFILE%\.agents\skills\` **不是**它的技能发现根）、
+  `%USERPROFILE%\.agents\skills\` **不是**它的技能发现根（同日受控实验：该根放探针技能不被发现，
+  同一时刻放 `.workbuddy\skills\` 的对照技能被发现，缓存 48 → 49 条））、
   **Junction 目标仓库静默落后**（实测落后 `origin/main` 14 个提交，WorkBuddy 与
   Windows 侧 Codex、opencode 读到的是缺 v4「推送核验」条的旧技能，**全程零报错**）
 - ⚠️ **未验证**：macOS 平台、`git worktree` 在**多 agent 并行**下的端到端回归、
