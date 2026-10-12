@@ -253,6 +253,30 @@ python3 scripts/verify_blocks.py --block local/block/GLOBAL-PROJECT-LOG-RULES.v5
 
 这是**预期行为**：模板与填值后的实例本来就不同，校验比的正是"你的部署是否都等于你指定的那一份"。
 
+### 🧭 本机清单别手写：用 `find_block_targets.py` 扫出来
+
+`local/targets.txt` 是**本机**清单（`local/` 被 `.gitignore` 排除，不入库）。
+手写它会**静默漏掉**带块的文件——2026-10-12 实测：一次 v4 → v5 全量升级按手写清单升了 20 个目标，
+脚本一扫才发现另有 **9 个从未登记的部署件还停在 v3**（其中 8 个是正在被投影成 DSH 技能的"项目规则"源），
+全程没有任何报错。所以：
+
+```bash
+# 生成本机清单（先看输出，再决定是否覆盖）
+python3 scripts/find_block_targets.py \
+    --root ~/projects --root /mnt/d/opencode_project \
+    --exclude '*/agent-git-discipline/*' --exclude '*/test_run_*/*' > local/targets.txt
+
+# 查漂移 / 定时巡检：有增删就退出码 1
+python3 scripts/find_block_targets.py --root … --diff local/targets.txt
+
+# 看每个部署件的块版本（找出"静默停在旧版本"的那些）
+python3 scripts/find_block_targets.py --root … --json
+```
+
+判定规则有意收窄：**只看 `AGENTS.md` / `AGENTS.mdc` / `AGENTS*.md`**，且文件里必须**成对**出现
+`:START` 与 `:END` 标记——这样投影产物（`RULES.md` / `SKILL.md`）、文档里的**引用**、
+历史快照都不会被误当成部署件。工具仓自己的副本与一次性测试目录用 `--exclude` 排掉。
+
 ## 许可证
 
 本项目代码与文档采用 [MIT](LICENSE)。
