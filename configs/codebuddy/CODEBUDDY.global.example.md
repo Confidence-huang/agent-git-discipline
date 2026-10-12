@@ -3,9 +3,13 @@
 > **用途**：可直接**追加**到 WorkBuddy / CodeBuddy 的用户级记忆文件
 > （`%USERPROFILE%\.codebuddy\CODEBUDDY.md`，另有 `CODEBUDDY.local.md`）的示例。
 >
-> **依据（2026-10-12 实测其 CLI bundle）**：全局记忆文件名是 `CODEBUDDY.md`；
+> **依据（2026-10-12 先读 bundle、后跑运行时实测）**：用户级记忆文件是
+> `%USERPROFILE%\.codebuddy\CODEBUDDY.md`（运行时打 `[user] [always] …` 实锤）；
 > **项目级**记忆文件名才是 `AGENTS.md` / `AGENTS.mdc`——所以项目里的托管块本来就生效，
 > 这份示例补的是**用户级**那一层。
+>
+> ⚠️ 两个实测坑：① `%USERPROFILE%\.workbuddy\CODEBUDDY.md` **不读**（用户级入口在 `.codebuddy\` 下）；
+> ② 项目根若同时存在 `CODEBUDDY.md`，**只加载后者**、`AGENTS.md` 被跳过。
 >
 > **不要整体覆盖**你已有的 `CODEBUDDY.md`——只把下面条目追加进去。
 
@@ -33,8 +37,12 @@
 
 ## 技能接入（Windows 侧必须用 Junction）
 
-WorkBuddy / CodeBuddy 的技能根包含 `%USERPROFILE%\.workbuddy\skills\`、
-`%USERPROFILE%\.codebuddy\skills\` 与 `%USERPROFILE%\.agents\skills\`。
+WorkBuddy / CodeBuddy 的技能发现根（2026-10-12 运行时实测）：
+`%USERPROFILE%\.workbuddy\skills\`（WorkBuddy 系）或 `%USERPROFILE%\.codebuddy\skills\`
+（CodeBuddy CLI 系），另有项目级 `.codebuddy\skills\` 与插件市场
+`…\plugins\marketplaces\*\plugins\*\skills\`。
+`%USERPROFILE%\.agents\skills\` **未证实**是它的发现根（只出现在 bundle 的"允许写/排除备份"清单里），
+挂上成本极低、可以挂，但别当成已知生效的入口。
 
 ```powershell
 # 不要用 WSL 的 ln -s 往 /mnt/c 建链接（LX 软链 Windows 程序读不到）
@@ -43,6 +51,11 @@ New-Item -ItemType Junction `
   -Path   "$env:USERPROFILE\.workbuddy\skills\git-discipline" `
   -Target "<skills-root>\git-discipline"
 ```
+
+> ⚠️ **Junction 目标仓库会静默落后**：本机 2026-10-12 实测四个 Junction 指向的克隆
+> 落后 `origin/main` **14 个提交**，Agent 读到的是缺 v4「推送核验」条的旧技能且**零报错**。
+> 定期复验：`git -C <skills-root> fetch && git -C <skills-root> status -sb`，
+> 落后就 `merge --ff-only origin/main`。
 
 ---
 

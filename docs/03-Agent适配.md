@@ -31,7 +31,7 @@
 | **Codex**（OpenAI） | `$CODEX_HOME/AGENTS.md`（默认 `~/.codex/AGENTS.md`） | 读 `<root>/.agents/skills` | ✅ 实测验证 |
 | **opencode** | `~/.config/opencode/AGENTS.md` + 项目 `AGENTS.md` | **`~/.agents/skills/`**（1.18+ 自动加载；项目内 `.opencode/skills/`） | ✅ 实测验证 |
 | **DeepSeek Harness (DSH)** | ❌ **不读 `AGENTS.md`** | `~/.agents/skills` 或 `<projectRoot>/.agents/skills` | ✅ 实测验证 |
-| **CodeBuddy / WorkBuddy** | 全局 `CODEBUDDY.md`（+ `CODEBUDDY.local.md`）；项目 `AGENTS.md`（+ `AGENTS.mdc`） | `~/.workbuddy/skills/`、`~/.codebuddy/skills/`、`~/.agents/skills/`、插件市场 `~/.workbuddy/plugins/marketplaces/**/skills/` | 🟡 路径验证 |
+| **CodeBuddy / WorkBuddy** | 用户级 `%USERPROFILE%\.codebuddy\CODEBUDDY.md`（+ `CODEBUDDY.local.md`）；项目 `AGENTS.md`（+ `AGENTS.mdc`），同目录若另有 `CODEBUDDY.md` 则**只读后者** | 用户级 `%USERPROFILE%\.workbuddy\skills\`（WorkBuddy 系）/ `%USERPROFILE%\.codebuddy\skills\`（CodeBuddy CLI 系）、项目级 `.codebuddy\skills\`、插件市场 `…\plugins\marketplaces\*\plugins\*\skills\` | ✅ 实测验证 |
 | **Claude Code** | `CLAUDE.md`（项目 + 用户级） | `.claude/skills/` | ⚠️ 文档依据 |
 | **Cursor** | `AGENTS.md` / `.cursor/rules/` | — | ⚠️ 文档依据 |
 | **Gemini CLI** | `AGENTS.md`（需在 `.gemini/settings.json` 声明） | — | ⚠️ 文档依据 |
@@ -186,18 +186,37 @@ ln -s <skills-root>/git-discipline ~/.agents/skills/git-discipline
 
 ---
 
-### 3.1 CodeBuddy / WorkBuddy（Windows 侧）🟡 路径验证
+### 3.1 CodeBuddy / WorkBuddy（Windows 侧）✅ 实测验证
 
-本机另有一个 CodeBuddy 系的 Windows 编码应用（WorkBuddy）。实测其 CLI bundle
-（`resources/app.asar.unpacked/cli/dist/codebuddy-headless.js`）：
+本机另有一个 CodeBuddy 系的 Windows 编码应用（WorkBuddy 桌面版 37.10.3-24，
+内置 CLI bundle 2.156.0 / `resources/app.asar.unpacked/cli/dist/codebuddy-headless.js`）。
+**2026-10-12 跑通了一次真实端到端会话**；本节据此重写，**推翻**旧版本节的 🟡 结论与技能根清单。
 
-- **读 `AGENTS.md`**（bundle 里有 `e_="AGENTS.md"` / `AGENTS.mdc` 与 `resolveMemoryFileNames()`）
-  → 项目级**托管块开箱即用**。
-- **全局记忆文件是 `CODEBUDDY.md`**（+ `CODEBUDDY.local.md`），**不是** `AGENTS.md`。
-- **技能根**：`~/.workbuddy/skills/`、`~/.codebuddy/skills/`、`~/.agents/skills/`，
-  以及插件市场 `~/.workbuddy/plugins/marketplaces/*/plugins/*/skills/`。
-- 它把 `CODEBUDDY.md`、`.codebuddy/settings*.json`、`.codebuddy/rules/` 视为
-  "控制 agent 自身行为"的**受保护文件**——改动前按本仓库备份规则处理。
+**规则入口**（下表每一行都由运行时日志实证，不是路径推断）
+
+| 层级 | 路径 | 运行时观察 |
+|---|---|---|
+| 用户级 | `%USERPROFILE%\.codebuddy\CODEBUDDY.md`（+ `CODEBUDDY.local.md`） | `MemoryLoader` 打 `[user] [always] …\.codebuddy\CODEBUDDY.md` |
+| 项目级 | `<项目目录>\AGENTS.md`（或 `AGENTS.mdc`） | `MemoryLoader` 打 `[project] [always] …\AGENTS.md` |
+| 项目级（同目录优先） | `<项目目录>\CODEBUDDY.md` | 同目录**两个文件都在时只加载 `CODEBUDDY.md`**，`AGENTS.md` 被跳过 |
+| 祖先目录 | 工作目录逐级向上找同名文件 | `%USERPROFILE%\CODEBUDDY.md` 会被当 `[project]` 读入 |
+
+> ⚠️ **三个反直觉点（都实测过）**
+> 1. `%USERPROFILE%\.workbuddy\CODEBUDDY.md` 与 `%USERPROFILE%\.workbuddy\AGENTS.md`
+>    **都不读**——用户级入口在 `.codebuddy\` 下，不在应用数据目录 `.workbuddy\` 下；
+> 2. 同目录内 `CODEBUDDY.md` **压过** `AGENTS.md`：想用项目托管块，就别在项目根再放 `CODEBUDDY.md`；
+> 3. 把全局规则放 `%USERPROFILE%\CODEBUDDY.md` **并不全局**：它靠"祖先目录"被读到，
+>    `D:\…` 下的项目看不到它，必须放 `%USERPROFILE%\.codebuddy\CODEBUDDY.md`。
+
+**技能根**
+
+| 来源 | 路径 | 依据 |
+|---|---|---|
+| 应用级（WorkBuddy 系） | `%USERPROFILE%\.workbuddy\skills\` | 应用自己的技能缓存 `.workbuddy\.skill-list-cache.json`：48 条里 `git-discipline` 的 `filePath` 在此，`source=userSettings` |
+| 应用级（CodeBuddy CLI 系） | `%USERPROFILE%\.codebuddy\skills\` | bundle 里 `PathUtils.getHomeDir()` 随产品品牌变 |
+| 项目级 | `<项目>\.codebuddy\skills\` | bundle `getProjectSkillsDir()` |
+| 插件市场 | `…\plugins\marketplaces\*\plugins\*\skills\`、`…\.workbuddy\skills-marketplace\`、内置 `…\resources\plugins\workbuddy-builtin\skills\` | 应用缓存里 48 条技能的实际分布 |
+| ⚠️ 未证实 | `%USERPROFILE%\.agents\skills\` | 它在本 bundle 里只出现在"允许写 / 排除备份"清单，**未见作为技能发现根**（旧版本节把它列为技能根，属误读，2026-10-12 更正） |
 
 **接入方式**（与 DSH 同构：技能 + 托管块）
 
@@ -209,7 +228,28 @@ New-Item -ItemType Junction `
   -Target "<skills-root>\git-discipline"
 ```
 
-**未验证**：没有让 WorkBuddy 实际跑一遍会话确认规则生效，故标 🟡 路径验证而非 ✅ 实测验证。
+> ⚠️ **Junction 目标仓库会静默落后**（2026-10-12 实测）：本机 Windows 侧四个 Junction
+> 指向的克隆落后 `origin/main` **14 个提交**，于是 WorkBuddy 与 Windows 侧 Codex、opencode
+> 读到的是**缺 v4「推送核验」条**的旧技能，**全程零报错**。修法与复验：
+> `git -C <skills-root> fetch && git -C <skills-root> merge --ff-only origin/main`，
+> 再用 `Select-String -SimpleMatch "ls-remote" "<junction>\SKILL.md"` 确认内容真的换了。
+
+**受保护文件**：bundle 把 `CODEBUDDY.md`、`CODEBUDDY.local.md`、`.codebuddy/settings*.json`、
+`.codebuddy/rules/`、`.codebuddy/skills/` 等视为"控制 agent 自身行为"的文件——
+改动前按本仓库备份规则处理。
+
+**验证证据（2026-10-12，一次性仓库 `D:\Workbuddy project\_wb-e2e-verify`）**
+
+项目 `AGENTS.md` 里放托管块 v4 + 只有该文件才有的口令，然后在 WorkBuddy 里发一句
+「把 note.md 末尾追加一行 …，然后按你当前生效的 Git 纪律处理这次改动」，一次会话内观察到：
+
+1. 回复**原样复述**口令 `WB-PROJ-MARKER-20261012-1255` → 项目级入口确实进了上下文；
+2. 自行执行「核对 Git 根 → 只 `git add note.md`（未用 `git add .`）→ 复核 `git diff --staged`
+   → 原子提交」；落盘核验 `6c21188 chore: note.md 追加验证口令 wb-live-20261012-1255`，
+   `1 file changed, 2 insertions(+)`，提交后工作树干净；
+3. 回报写成托管块规定的形态 `已git：D:/Workbuddy project/_wb-e2e-verify 第 3 次 git（commit 6c21188）`，
+   与 `git rev-list --first-parent --count HEAD` = 3 一致；
+4. 主动声明「push / 远端核对属需单独授权，故未执行」——与 v4 的授权边界一致。
 
 ---
 
@@ -221,6 +261,7 @@ New-Item -ItemType Junction `
 |---|---|---|---|---|
 | Codex | ✅ | ✅ | ✅ | 可选（细节） |
 | opencode | ✅ | ✅ | ✅ | 可选（细节） |
+| **WorkBuddy** | ✅（同目录另有 `CODEBUDDY.md` 时读后者） | ✅ | ✅ | 可选（细节） |
 | **DSH** | ❌ | ✅ | ❌ | **必需** |
 
 **结论**：只做 `AGENTS.md` → DSH 完全失效；只做技能 → Codex/opencode 的项目级投影缺失。
