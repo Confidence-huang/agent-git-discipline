@@ -121,7 +121,7 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 | Codex (OpenAI) | `$CODEX_HOME/AGENTS.md` | ✅ 已验证 |
 | opencode | `~/.config/opencode/AGENTS.md` + 项目 `AGENTS.md`（技能自动加载 `~/.agents/skills/`） | ✅ 已验证 |
 | DeepSeek Harness (DSH) | `<skill-root>/<name>/SKILL.md` | ✅ 已验证 |
-| CodeBuddy / WorkBuddy | 全局 `CODEBUDDY.md`（+ `CODEBUDDY.local.md`）+ 项目 `AGENTS.md` | 🟡 路径验证（入口与技能根实测，未跑端到端） |
+| CodeBuddy / WorkBuddy | 用户级 `%USERPROFILE%\.codebuddy\CODEBUDDY.md`（+ `CODEBUDDY.local.md`）+ 项目 `AGENTS.md`（同目录另有 `CODEBUDDY.md` 时读后者） | ✅ 已验证 |
 | Claude Code | 项目 `CLAUDE.md` 里写 `@AGENTS.md`（**默认不读 AGENTS.md**，样例见 `configs/claude/`） | ⚠️ 未验证（样例已按官方文档给出） |
 | Cursor | 根/子目录 `AGENTS.md` 原生读取；可选 `.cursor/rules/*.mdc`（见 `configs/cursor/`） | ⚠️ 未验证 |
 | Gemini CLI | `GEMINI.md` 里 `@AGENTS.md`，或配 `context.fileName`（见 `configs/gemini/`） | ⚠️ 未验证 |
@@ -142,9 +142,14 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   **`git worktree` 的身份判据**（`--git-common-dir` 在主工作树返回**相对** `.git`、
   linked worktree 返回**绝对路径** ⇒ 必须 `--path-format=absolute` + `realpath` 才能比；
   实测同一分支二次检出被官方拒绝）、**入库钩子必须有执行位**（否则被静默忽略；
-  本仓库 `.githooks/pre-push` 已是 `-rwxr-xr-x`）
-- 🟡 **路径验证**：CodeBuddy / WorkBuddy —— 规则入口（`AGENTS.md` / `CODEBUDDY.md`）
-  与三处技能根已实测，但**未跑端到端会话**确认规则真的生效
+  本仓库 `.githooks/pre-push` 已是 `-rwxr-xr-x`）、
+  **WorkBuddy 端到端规则生效**（2026-10-12 真实会话：项目 `AGENTS.md` 里只有该文件才有的口令
+  被原样复述、它自行按托管块做了原子提交并写成 `已git：<仓库> 第 N 次 git（commit …）` 形态，
+  编号与 `git rev-list --first-parent --count HEAD` 一致；同时**推翻**两处旧结论——
+  用户级入口是 `%USERPROFILE%\.codebuddy\CODEBUDDY.md`（不是 `.workbuddy\`）、
+  `%USERPROFILE%\.agents\skills\` **不是**它的技能发现根）、
+  **Junction 目标仓库静默落后**（实测落后 `origin/main` 14 个提交，WorkBuddy 与
+  Windows 侧 Codex、opencode 读到的是缺 v4「推送核验」条的旧技能，**全程零报错**）
 - ⚠️ **未验证**：macOS 平台、`git worktree` 在**多 agent 并行**下的端到端回归、
   pre-commit 钩子强制（客户端钩子只是早筛：官方有 `--no-verify`，且 `core.hooksPath`
   **不在** Git protected configuration 名单里，还能 `-c core.hooksPath=/dev/null` 一次性禁掉）、
