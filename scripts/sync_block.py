@@ -13,7 +13,7 @@
 用法
 ----
     # 预览
-    python3 scripts/sync_block.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v5.md \\
+    python3 scripts/sync_block.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v6.md \\
             --targets targets.txt
 
     # 实际写入（可选先备份）

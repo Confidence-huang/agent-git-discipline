@@ -13,8 +13,17 @@ cd "$(git rev-parse --show-toplevel)" || exit 1
 rc=0
 
 echo "── [1/2] 托管块一致性 ──"
-python3 scripts/verify_blocks.py \
-  --block configs/block/GLOBAL-PROJECT-LOG-RULES.v5.md --targets targets.txt || rc=1
+# 权威块路径**从 targets.txt 的自检行取，不要硬编码版本** ——
+# 实测教训（2026-10-13）：v6 升版本时漏改本钩子，结果门禁被自己的旧版本 v5 拦住，
+# 推送直接失败。硬编码版本的地方每次升版都要手工同步，迟早漏。
+BLOCK="$(grep -m1 -E '^configs/block/GLOBAL-PROJECT-LOG-RULES\.v[0-9]+\.md$' targets.txt || true)"
+if [ -z "$BLOCK" ]; then
+  echo "❌ targets.txt 里找不到权威块自检行（应有一行：configs/block/GLOBAL-PROJECT-LOG-RULES.vN.md）" >&2
+  rc=1
+else
+  echo "   权威块 = $BLOCK"
+  python3 scripts/verify_blocks.py --block "$BLOCK" --targets targets.txt || rc=1
+fi
 echo
 
 echo "── [2/2] 仓库一致性 ──"

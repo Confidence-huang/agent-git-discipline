@@ -27,11 +27,15 @@ jobs:
 
       # ── 核心不变量：仓库内所有托管块副本必须与权威块字节一致 ──
       # 改了权威块却忘了同步 templates/ 骨架，这一步会直接失败。
+      # ⚠️ 权威块路径从 targets.txt 的自检行取，**不要硬编码版本** ——
+      #    2026-10-13 v6 升版本时漏改本文件，CI 会用 v5 去比 v6 骨架而变红。
       - name: 校验托管块一致性
         run: |
-          python3 scripts/verify_blocks.py \
-            --block configs/block/GLOBAL-PROJECT-LOG-RULES.v5.md \
-            --targets targets.txt
+          set -euo pipefail
+          BLOCK="$(grep -m1 -E '^configs/block/GLOBAL-PROJECT-LOG-RULES\.v[0-9]+\.md$' targets.txt)"
+          test -n "$BLOCK"
+          echo "权威块 = $BLOCK"
+          python3 scripts/verify_blocks.py --block "$BLOCK" --targets targets.txt
 
       # ── 技能 frontmatter / 换行 / 脚本语法 ──
       - name: 仓库一致性检查

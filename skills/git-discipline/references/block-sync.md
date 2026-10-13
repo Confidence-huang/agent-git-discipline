@@ -15,8 +15,8 @@
 ## 2. 块形态
 
 ```markdown
-<!-- GLOBAL-PROJECT-LOG-RULES:START v5 -->
-## GLOBAL-PROJECT-LOG-RULES 托管规则块（v5）
+<!-- GLOBAL-PROJECT-LOG-RULES:START v6 -->
+## GLOBAL-PROJECT-LOG-RULES 托管规则块（v6）
 
 ### 身份与范围
 - 本块适用于本文件所在的**本仓库**，以及满足以下条件的 linked worktree：
@@ -82,7 +82,7 @@
 | 要点 | 原因 |
 |---|---|
 | **配对标记**（START / END） | 旧版只有开头标记，实测漂移出 5 种格式，无法机械定位边界 |
-| **版本号**（`v5`） | 使新旧块可区分；升版时可一次性筛选受影响文件 |
+| **版本号**（`v6`） | 使新旧块可区分；升版时可一次性筛选受影响文件 |
 | **平台中立** | 块内不写死盘符，按平台列出取值，使三平台共用同一份字节 |
 
 ## 3. 为什么必须平台中立
@@ -98,21 +98,19 @@
 ## 4. 同步流程
 
 ```bash
+# 权威块路径统一从这里取 —— **别硬编码版本**
+# （v4→v5→v6 三次升版都漏过某处硬编码）
+BLOCK="$(grep -m1 -E '^configs/block/GLOBAL-PROJECT-LOG-RULES\.v[0-9]+\.md$' targets.txt)"
+
 # 1) 预览（默认 dry-run，不动文件）
-python3 scripts/sync_block.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
-    --targets targets.txt
+python3 scripts/sync_block.py --block "$BLOCK" --targets targets.txt
 
 # 2) 实际写入（可选先备份）
-python3 scripts/sync_block.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
-    --targets targets.txt --apply \
+python3 scripts/sync_block.py --block "$BLOCK" --targets targets.txt --apply \
     --backup-dir <backup-root>/block-sync-$(date +%Y%m%d-%H%M%S)
 
 # 3) 校验：必须 n/n 全一致
-python3 scripts/verify_blocks.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
-    --targets targets.txt
+python3 scripts/verify_blocks.py --block "$BLOCK" --targets targets.txt
 ```
 
 **退出码**：`verify_blocks.py` 全部一致返回 0，否则返回 1 —— 可直接用于 CI。
@@ -171,10 +169,10 @@ ls /mnt/d/projects/*/AGENTS.md > local/targets.txt
 
 ## 8. 升级块的版本
 
-当块内容有较大变更时，建议升版本号（`v4` → `v5`），使新旧可区分：
+当块内容有较大变更时，建议升版本号（`v5` → `v6`），使新旧可区分：
 
 ```markdown
-<!-- GLOBAL-PROJECT-LOG-RULES:START v5 -->
+<!-- GLOBAL-PROJECT-LOG-RULES:START v6 -->
 ```
 
 **注意**：任何块内容变更都会改变哈希，因此**所有**目标都需要重新同步。
