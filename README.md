@@ -150,7 +150,11 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   `%USERPROFILE%\.agents\skills\` **不是**它的技能发现根（同日受控实验：该根放探针技能不被发现，
   同一时刻放 `.workbuddy\skills\` 的对照技能被发现，缓存 48 → 49 条））、
   **Junction 目标仓库静默落后**（实测落后 `origin/main` 14 个提交，WorkBuddy 与
-  Windows 侧 Codex、opencode 读到的是缺 v4「推送核验」条的旧技能，**全程零报错**）
+  Windows 侧 Codex、opencode 读到的是缺 v4「推送核验」条的旧技能，**全程零报错**）、
+  **`git worktree` 的运行期副本风险与安全退休**（2026-10-13 实测：同一仓库两个 worktree 各有一份
+  `tools/`，两份**同名**脚本对**同一个事实**给出**相反判据**，据此得出的结论是错的 ——
+  识别信号 = 输出与仓库既有决定相反；退休路径已走通：三道核对 → `git worktree remove`
+  （**不加 `--force`**）→ 四项验证。见 [docs/06](docs/06-未验证项的业界做法.md) §三）
 - ⚠️ **未验证**：macOS 平台、`git worktree` 在**多 agent 并行**下的端到端回归、
   pre-commit 钩子强制（客户端钩子只是早筛：官方有 `--no-verify`，且 `core.hooksPath`
   **不在** Git protected configuration 名单里，还能 `-c core.hooksPath=/dev/null` 一次性禁掉）、
