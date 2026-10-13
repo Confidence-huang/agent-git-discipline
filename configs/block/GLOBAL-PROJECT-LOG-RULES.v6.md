@@ -13,6 +13,11 @@
       实测两份同名脚本对**同一个事实**给出**相反判据**，据此得出的结论是错的。
       执行脚本或读取配置前，先 git rev-parse --show-toplevel 确认工作树。
 
+  ── v4 → v5 的唯一内容变更：身份判据改为可执行定义（2026-10-13 补记）──
+      原判据在"主工作树给相对路径、linked worktree 给绝对路径"时会**假阴性**；
+      改为 git rev-parse --path-format=absolute --git-common-dir 后逐字节比较。
+      依据与实测见 docs/06-未验证项的业界做法.md §三。
+
   ── v3 → v4 的唯一内容变更：新增「推送结果以远端为准」──
       push 的输出不可信（实测报错却打印 Everything up-to-date、远端没收到）；
       推送后必须 ls-remote/fetch 核对远端 SHA；链路抖动中断属可重试错误，
