@@ -10,8 +10,8 @@
 
 `PROJECT_LOG.md` 是唯一跨会话连续性入口与当前状态事实来源。进入项目先读它，再读本文件。
 
-<!-- GLOBAL-PROJECT-LOG-RULES:START v5 -->
-## GLOBAL-PROJECT-LOG-RULES 托管规则块（v5）
+<!-- GLOBAL-PROJECT-LOG-RULES:START v6 -->
+## GLOBAL-PROJECT-LOG-RULES 托管规则块（v6）
 
 ### 身份与范围
 - 本块适用于本文件所在的**本仓库**，以及满足以下条件的 linked worktree：
@@ -40,6 +40,10 @@
 - Live Git truth：branch、HEAD、worktree 状态是**恢复期事实**，必须从 Git 现读；日志只记稳定检查点与安全边界，不复制瞬时状态。
 - 自引用：`PROJECT_LOG.md` 不预测包含它自己的那个 commit 的 SHA；该 commit 由 Git 在提交后解析。
 - 写代码/配置前先核对 Git 根（`git rev-parse --show-toplevel`）、branch、HEAD、index 与目标文件归属；不得在不知道仓库边界时直接写代码。
+- **执行前先确认工作树**（v6 新增）：多 worktree 并存时，**同一相对路径在不同工作树里可能是不同版本**的
+  脚本/配置 —— 实测两份同名脚本对**同一个事实**给出**相反判据**，据此得出的结论是错的。
+  执行任何脚本、或读取任何配置/规则文件前，先 `git rev-parse --show-toplevel` 确认它在哪个工作树。
+  识别信号：**输出与本仓库 `docs` / `AGENTS.md` 里已作出的决定相反** ⇒ 先怀疑跑错了副本，再怀疑结论。
 - 首段写入前建本次原子基线；每个通过验证的原子改动只暂存本轮文件，复核 `git diff --staged` 后立即本地 commit；禁止 `git add .` / `git add -A`；**不允许积攒多轮改动一次混合提交**；混杂时用 `git add -p` 逐块挑选。
 - **原子性检验**：只做一件事／代码库仍可工作／message 标题不需要"and"／能独立 revert／无需外部上下文即可理解。描述时必须说"和"，就是两个 commit。
 - 本地 commit **已默认授权**，不必逐次确认；**不包含**新建/切换分支、rebase、reset、改写历史、tag、push、PR、删除、批量清理——这些需单独授权。`push --force` 禁止；确需时只用 `--force-with-lease` 且限自己分支。

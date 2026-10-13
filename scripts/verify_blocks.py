@@ -11,7 +11,7 @@
 
 用法
 ----
-    python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v5.md \\
+    python3 scripts/verify_blocks.py --block configs/block/GLOBAL-PROJECT-LOG-RULES.v6.md \\
             --targets targets.txt
     python3 scripts/verify_blocks.py --block <块文件> <文件1> <文件2> ...
     python3 scripts/verify_blocks.py --block <块文件> --targets targets.txt --json
@@ -36,8 +36,8 @@ PAT_HEADING = re.compile(
     r"##\s*GLOBAL-PROJECT-LOG-RULES[^\n]*\n(?:(?!##\s).)*",
     re.S,
 )
-# 仅用于「旧格式残留」告警：这些写法说明块没被 v5 统一。
-# 注意最后一条必须排除 START/END，否则会把当前的 `:START v5 -->` 误报成旧格式。
+# 仅用于「旧格式残留」告警：这些写法说明块没被 v6 统一。
+# 注意最后一条必须排除 START/END，否则会把当前的 `:START v6 -->` 误报成旧格式。
 PAT_LEGACY = re.compile(
     r"GLOBAL-PROJECT-LOG-RULES:(START|BEGIN)\s*-->|"          # 无版本号的 :START/:BEGIN
     r"GLOBAL-PROJECT-LOG-RULES\s+START\s*-->|"                # 空格分隔

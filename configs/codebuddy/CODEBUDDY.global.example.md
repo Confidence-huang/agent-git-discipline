@@ -15,7 +15,7 @@
 
 ---
 
-## Git 纪律（与托管块 v5 同源）
+## Git 纪律（与托管块 v6 同源）
 
 - 改动任何代码、脚本、配置或规则前，先核对 **Git 根**（`git rev-parse --show-toplevel`）、
   branch、HEAD、index 与目标文件归属；不得在不知道仓库边界时动手。
@@ -30,8 +30,8 @@
   `Everything up-to-date`"而远端没收到）；推送后必须 `git ls-remote origin <branch>` 核对，
   不一致按**失败**处理、不得回报"已推送"。链路抖动可重试：
   `git -c http.version=HTTP/1.1 -c pack.threads=1 push`；**禁止 `--no-verify` 绕过门禁**。
-- 项目级 `AGENTS.md` 应包含 `GLOBAL-PROJECT-LOG-RULES` 托管块 **v5**；权威模板见来源仓库
-  `agent-git-discipline` 的 `configs/block/GLOBAL-PROJECT-LOG-RULES.v5.md`。
+- 项目级 `AGENTS.md` 应包含 `GLOBAL-PROJECT-LOG-RULES` 托管块 **v6**；权威模板见来源仓库
+  `agent-git-discipline` 的 `configs/block/GLOBAL-PROJECT-LOG-RULES.v6.md`。
 
 ---
 
