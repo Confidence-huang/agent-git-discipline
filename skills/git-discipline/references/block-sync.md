@@ -98,21 +98,19 @@
 ## 4. 同步流程
 
 ```bash
+# 权威块路径统一从这里取 —— **别硬编码版本**
+# （v4→v5→v6 三次升版都漏过某处硬编码）
+BLOCK="$(grep -m1 -E '^configs/block/GLOBAL-PROJECT-LOG-RULES\.v[0-9]+\.md$' targets.txt)"
+
 # 1) 预览（默认 dry-run，不动文件）
-python3 scripts/sync_block.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
-    --targets targets.txt
+python3 scripts/sync_block.py --block "$BLOCK" --targets targets.txt
 
 # 2) 实际写入（可选先备份）
-python3 scripts/sync_block.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
-    --targets targets.txt --apply \
+python3 scripts/sync_block.py --block "$BLOCK" --targets targets.txt --apply \
     --backup-dir <backup-root>/block-sync-$(date +%Y%m%d-%H%M%S)
 
 # 3) 校验：必须 n/n 全一致
-python3 scripts/verify_blocks.py \
-    --block configs/block/GLOBAL-PROJECT-LOG-RULES.v3.md \
-    --targets targets.txt
+python3 scripts/verify_blocks.py --block "$BLOCK" --targets targets.txt
 ```
 
 **退出码**：`verify_blocks.py` 全部一致返回 0，否则返回 1 —— 可直接用于 CI。
