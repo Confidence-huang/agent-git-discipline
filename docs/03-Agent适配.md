@@ -20,7 +20,9 @@
 > 📌 第三～九节里的四家（Claude Code / Cursor / Gemini CLI / Aider）已按官方文档重写，
 > 并配了可直接复制的样例（`configs/claude/`、`configs/cursor/`、`configs/gemini/`、`configs/aider/`），
 > 依据与不确定项见 [06-未验证项的业界做法.md](06-未验证项的业界做法.md)。
-> 它们**仍然是 ⚠️ 未验证——样例不等于实测**。
+> **2026-10-21 更新**：Gemini CLI 的规则入口已实测（0.64.0，见 §7），从 ⚠️ 升为
+> ✅ **规则注入层**——但它的**真实模型后端**仍未验证（免费个人版登录被 Google 下线，
+> 只能走 API key / Vertex）。其余三家仍是 ⚠️ 未验证——样例不等于实测。
 
 ---
 
@@ -34,7 +36,7 @@
 | **CodeBuddy / WorkBuddy** | 用户级 `%USERPROFILE%\.codebuddy\CODEBUDDY.md`（+ `CODEBUDDY.local.md`）；项目 `AGENTS.md`（+ `AGENTS.mdc`），同目录若另有 `CODEBUDDY.md` 则**只读后者** | 用户级 `%USERPROFILE%\.workbuddy\skills\`（WorkBuddy 系）/ `%USERPROFILE%\.codebuddy\skills\`（CodeBuddy CLI 系）、项目级 `.codebuddy\skills\`、插件市场 `…\plugins\marketplaces\*\plugins\*\skills\` | ✅ 实测验证 |
 | **Claude Code** | `CLAUDE.md`（项目 + 用户级） | `.claude/skills/` | ⚠️ 文档依据 |
 | **Cursor** | `AGENTS.md` / `.cursor/rules/` | — | ⚠️ 文档依据 |
-| **Gemini CLI** | `AGENTS.md`（需在 `.gemini/settings.json` 声明） | — | ⚠️ 文档依据 |
+| **Gemini CLI** | `GEMINI.md`（默认名）里 `@AGENTS.md`，或项目/用户 `settings.json` 的 `context.fileName`；**默认不读 `AGENTS.md`** | `.agents/skills/`（docs/06 官方口径，本机未实测） | ✅ 实测验证（规则注入；真实模型端见 §7） |
 | **Aider** | `AGENTS.md`（需在 `.aider.conf.yml` 声明） | — | ⚠️ 文档依据 |
 | **GitHub Copilot coding agent** | `AGENTS.md` | — | ⚠️ 文档依据 |
 
@@ -319,18 +321,71 @@ cp templates/AGENTS.project-skeleton.md /path/to/project/AGENTS.md
 
 ---
 
-### 7. Gemini CLI ⚠️ 文档依据
+### 7. Gemini CLI ✅ 实测验证（规则注入；真实模型后端见下）
 
-**规则入口**：默认不读 `AGENTS.md`，需显式声明。
+**实测版本**：`@google/gemini-cli@0.64.0`（Node v26.8.1，WSL2）。
+另核对了 `0.65.0-preview.0`：OAuth client 未变，故未重跑全量。
 
-依据 [agents.md](https://agents.md/) 给出的配置：
+**规则入口**
 
-```json
-// .gemini/settings.json
-{ "context": { "fileName": "AGENTS.md" } }
+- **默认只认 `GEMINI.md`**：源码常量 `DEFAULT_CONTEXT_FILENAME = "GEMINI.md"`，
+  整个 bundle 没有把 `AGENTS.md` 当默认上下文文件的路径。**只放 `AGENTS.md` 不会被读**（已实测，
+  见下表第一行）。
+- 两种接法（任选其一，可并存）：
+  1. 项目根 `GEMINI.md` 里写一行 `@AGENTS.md`（`@` 导入）；
+  2. 在 `settings.json` 里配 `context.fileName`（string 或 string[]，见 `configs/gemini/`）。
+- 记忆文件层级：`~/.gemini/GEMINI.md` → 工作区及父目录（上溯至 git 根/home）→ JIT。
+- 官方依据：<https://github.com/google-gemini/gemini-cli/blob/main/docs/cli/gemini-md.md> ·
+  <https://github.com/google-gemini/gemini-cli/blob/main/docs/reference/configuration.md>
+
+**实测结论**（2026-10-21；多个一次性临时仓库，用本地回环端点观察请求体）
+
+| 场景 | 配置 | 结果 |
+|---|---|---|
+| 默认 | 只有 `AGENTS.md` | ❌ 规则**未**进入请求 |
+| `@` 导入 | `GEMINI.md` 内容为 `@AGENTS.md` | ✅ 口令进入请求体并被回显 |
+| `context.fileName` | 项目 `.gemini/settings.json`，**受信任目录** | ✅ 进入请求 |
+| 同上 + `--skip-trust` | **未受信任**目录 | ❌ 项目 settings 被跳过，规则不生效 |
+| 同上 + `GEMINI_CLI_TRUST_WORKSPACE=true` | **未受信任**目录 | ✅ 进入请求 |
+| `context.fileName` 多值 | `["GEMINI.md","AGENTS.md"]` | ✅ **两个都加载**（不是按序回退） |
+| `GEMINI.md` 在未受信任目录 | 配合 `--skip-trust` | ✅ 记忆文件仍加载（只有项目 settings 需要信任） |
+
+> ⚠️ **坑：`--skip-trust` 只跳过信任提示，不等于受信任**。项目级 `.gemini/settings.json`
+> 不会加载，`context.fileName` 于是静默失效。CI / headless 里有两条正路：
+> 把目录写进 `~/.gemini/trustedFolders.json`（`{"<绝对路径>": "TRUST_FOLDER"}`），
+> 或设 `GEMINI_CLI_TRUST_WORKSPACE=true`。**用户级** `~/.gemini/settings.json` 的
+> `context.fileName` 则不受目录信任影响（未受信任目录里也生效，已实测）。
+
+**验证方法（可复现）**
+
+真实 Google 后端在本机不可用（原因见下），所以用本地回环端点验证「规则是否进入模型请求」：
+
+```bash
+# 一次性临时仓库：AGENTS.md 里放只有该文件才有的口令
+printf 'E2E_TOKEN: GEM-E2E-01-7f3a91\n' > AGENTS.md
+printf '@AGENTS.md\n' > GEMINI.md
+
+# 让 CLI 指向本地桩；桩把请求体（systemInstruction + contents）落盘
+GEMINI_API_KEY=test-local-key \
+GOOGLE_GEMINI_BASE_URL=http://127.0.0.1:8765 \
+gemini -p '复述 E2E_TOKEN'
 ```
 
-**未验证**：未在本机安装 Gemini CLI。
+判定：请求体里出现 `GEM-E2E-01-7f3a91` 即「规则注入成功」。
+这验证的是 **CLI 的规则发现与上下文注入**，不是 Google 模型本身。
+
+**真实后端：⚠️ 免费个人版登录已被 Google 下线**（2026-10-21 实测）
+
+- `gemini` 选「1. Sign in with Google」→ 浏览器授权 → 粘贴 code 后，CLI 明确报：
+  `This client is no longer supported for Gemini Code Assist for individuals.`
+  `To continue using Gemini, please migrate to the Antigravity suite of products: https://antigravity.google`
+- 同一 OAuth client（`681255809395-…apps.googleusercontent.com`）在 `0.65.0-preview.0` 里**未变**。
+- 结论：真实模型后端只能走 **`GEMINI_API_KEY`**（AI Studio）或 **Vertex AI**。
+  本机 AI Studio 还撞上区域限制（打开 API key 页被重定向到 “available regions” 文档）。
+- 所以本节 ✅ 的边界是：**规则入口与上下文注入已实测；Google 模型侧未实测**。
+
+**技能**：`.agents/skills/` 与 `.gemini/skills/`（同层 `.agents/` 优先）是 docs/06 的官方口径，
+**本机未实测**——技能激活需要真实会话里的 UI 确认，本地桩覆盖不到。
 
 ---
 

@@ -1,5 +1,5 @@
 {
-  "_comment": "Gemini CLI 上下文文件配置示例：复制片段到 .gemini/settings.json（项目级）或 ~/.gemini/settings.json（用户级）。context.fileName 接受 string 或 string[]；默认 undefined 时回落到 GEMINI.md。多值的精确语义（全部加载 vs 按序回退）官方未写明，落地前用 /memory show 实测。",
+  "_comment": "Gemini CLI 上下文文件配置示例：复制片段到 .gemini/settings.json（项目级）或 ~/.gemini/settings.json（用户级）。context.fileName 接受 string 或 string[]；默认 undefined 时回落到 GEMINI.md。多值语义已实测（0.64.0）：全部加载，不是按序回退。注意：项目级 settings 只在受信任目录生效——--skip-trust 不算信任，headless 用 GEMINI_CLI_TRUST_WORKSPACE=true 或写 trustedFolders.json；用户级 settings 不受影响。详见 docs/03-Agent适配.md §7。",
   "context": {
     "fileName": ["AGENTS.md", "GEMINI.md"]
   }
