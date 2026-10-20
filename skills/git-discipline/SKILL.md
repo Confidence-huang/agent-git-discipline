@@ -46,6 +46,11 @@ description: 强制 Git 纪律与可回退性，任何涉及代码、脚本、�
 - ⚠️ **`git push` 的输出不可信**：实测出现过"报错的同时打印 `Everything up-to-date`"，
   而远端**实际没收到**。**以远端为准**——推送后必须用 `git ls-remote origin <branch>`
   （或 `git fetch` + 比对 SHA）核对；核对不一致就当作**失败**，不得回报"已推送"。
+- ⚠️ **`ls-remote` 自己也会挂**（实测 2026-10-20：push 打印成功，紧接着 `ls-remote` 报
+  `gnutls_handshake() failed: The TLS connection was non-properly terminated`，HTTP/1.1 重试同样失败）。
+  此时**既不能判失败也不能判成功**：用 `gh api repos/<owner>/<repo>/commits/<branch> --jq .sha`
+  做第二通道（走独立 HTTP 栈），拿到 SHA 且与本地 HEAD 一致即可确认推送；
+  两路都拿不到才报 `GIT_BLOCKED`，并说明是**核验通道**不可用，不是推送失败。
 - 链路抖动导致的中断（`GnuTLS recv error (-110)` / `send-pack: unexpected disconnect` /
   `Empty reply from server`）属**可重试错误**：先
   `git -c http.version=HTTP/1.1 -c pack.threads=1 push` 重试（关掉 HTTP/2 多路复用 + 单流 pack），
