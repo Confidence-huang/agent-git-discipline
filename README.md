@@ -114,7 +114,8 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 
 ### 4. 按 Agent 配置入口
 
-见 [docs/03-Agent适配.md](docs/03-Agent适配.md)。已被本项目**实测验证**的组合：
+见 [docs/03-Agent适配.md](docs/03-Agent适配.md)。各 Agent 的规则入口与当前**验证状态**
+（✅ = 已实测 / ⚠️ = 未验证；验证级别与每条的**证据边界**见 docs/03 §一）：
 
 | Agent | 规则入口 | 状态 |
 |---|---|---|
@@ -124,10 +125,9 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 | CodeBuddy / WorkBuddy | 用户级 `%USERPROFILE%\.codebuddy\CODEBUDDY.md`（+ `CODEBUDDY.local.md`）+ 项目 `AGENTS.md`（同目录另有 `CODEBUDDY.md` 时读后者） | ✅ 已验证 |
 | Claude Code | 项目 `CLAUDE.md` 里写 `@AGENTS.md`（**默认不读 AGENTS.md**，样例见 `configs/claude/`） | ⚠️ 未验证（样例已按官方文档给出） |
 | Cursor | 根/子目录 `AGENTS.md` 原生读取；可选 `.cursor/rules/*.mdc`（见 `configs/cursor/`） | ⚠️ 未验证 |
-| Gemini CLI | `GEMINI.md` 里 `@AGENTS.md`，或配 `context.fileName`（见 `configs/gemini/`） | ⚠️ 未验证 |
+| Gemini CLI | `GEMINI.md` 里 `@AGENTS.md`，或配 `context.fileName`（见 `configs/gemini/`）；**默认不读 `AGENTS.md`** | ✅ 已验证（规则注入实测；真实模型后端需 API key/Vertex，见 docs/03 §7） |
 | Aider | `.aider.conf.yml` 的 `read: [AGENTS.md]`（**无技能机制**，见 `configs/aider/`） | ⚠️ 未验证 |
 | GitHub Copilot coding agent | 根 `AGENTS.md` **零配置生效**（含嵌套）；技能走 `.agents/skills/` | ⚠️ 未验证（官方文档口径） |
-| Claude Code / Cursor / Gemini CLI / Aider | 各自的规则文件 | ⚠️ 未验证（见文档） |
 
 ## 验证状态一览
 
@@ -154,15 +154,24 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   **`git worktree` 的运行期副本风险与安全退休**（2026-10-13 实测：同一仓库两个 worktree 各有一份
   `tools/`，两份**同名**脚本对**同一个事实**给出**相反判据**，据此得出的结论是错的 ——
   识别信号 = 输出与仓库既有决定相反；退休路径已走通：三道核对 → `git worktree remove`
-  （**不加 `--force`**）→ 四项验证。见 [docs/06](docs/06-未验证项的业界做法.md) §三）
+  （**不加 `--force`**）→ 四项验证。见 [docs/06](docs/06-未验证项的业界做法.md) §三）、
+  **Gemini CLI 的规则注入**（2026-10-21、0.64.0：临时仓库 `AGENTS.md` 里的口令出现在
+  **模型请求体**并被回显；`context.fileName` 多值时**全部加载**；**默认不读 `AGENTS.md`**；
+  项目级 `.gemini/settings.json` 只在**受信任目录**生效——`--skip-trust` 不加载它，
+  `GEMINI_CLI_TRUST_WORKSPACE=true` 才会。模型侧是**本地回环端点**，真实 Google 后端未验证，
+  见 docs/03 §7 与下文 ⚠️）
 - ⚠️ **未验证**：macOS 平台、`git worktree` 在**多 agent 并行**下的端到端回归、
   pre-commit 钩子强制（客户端钩子只是早筛：官方有 `--no-verify`，且 `core.hooksPath`
   **不在** Git protected configuration 名单里，还能 `-c core.hooksPath=/dev/null` 一次性禁掉）、
   **多人**协作的 PR 评审流程（本项目为单人仓库——官方明确**作者不能批准自己的 PR**，
   PR 流程本身已在公开仓库实测四轮，缺的是第二个人；见
   [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) 第八节）、
-  Claude Code / Cursor / Gemini CLI / Aider 的**端到端规则生效**（本机只装了 Claude Code，
-  其 CLI 还需单独登录；样例见 `configs/`，但**样例 ≠ 实测**）
+  Claude Code / Cursor / Aider 的**端到端规则生效**（本机已装 Claude Code，其 CLI 还需单独登录；
+  Cursor / Aider **本机未安装**；样例见 `configs/`，但**样例 ≠ 实测**）、
+  **Gemini CLI 的真实模型后端**（规则注入已实测，但 0.64.0 的免费个人版登录已被 Google 下线：
+  报 `This client is no longer supported for Gemini Code Assist for individuals`，提示迁移
+  Antigravity；`0.65.0-preview.0` 的 OAuth client 未变。真实后端只能走 `GEMINI_API_KEY` 或
+  Vertex AI——见 docs/03 §7）
 - ❌ **已知未解决**：仅本地仓库无异地备份。本机**已有** `bak-local-archives`
   （私有仓库 + systemd 定时打 `git bundle` 推 GitHub），但**覆盖不全**：实测全机 90 个 git 仓库里
   **50 个既无远端、也不在它的清单里**（含 411 提交、95 提交那类），整棵 `CodexProjects/` 从未纳入；
