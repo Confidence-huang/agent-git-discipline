@@ -23,6 +23,12 @@
 > **2026-10-21 更新**：Gemini CLI 的规则入口已实测（0.64.0，见 §7），从 ⚠️ 升为
 > ✅ **规则注入层**——但它的**真实模型后端**仍未验证（免费个人版登录被 Google 下线，
 > 只能走 API key / Vertex）。其余三家仍是 ⚠️ 未验证——样例不等于实测。
+>
+> **2026-10-28 更新**：新增 **Google Antigravity**（§10）。规则发现与技能发现都在本机
+> **实测**（App 2.27.0：`GetAllRules` / `GetAllSkills` / `GetTokenBase` 三个本地 RPC 都返回了
+> 探针内容），因此标 ✅ **发现与注入层**；但**模型是否真的照做**未验证——没有对它跑
+> "改文件→看是否原子提交"的端到端会话。另有一条**反直觉结论**：Antigravity
+> **不跟随 Junction/软链**读技能，靠 `skills.json` 清单引用才生效（§10.3）。
 
 ---
 
@@ -37,6 +43,7 @@
 | **Claude Code** | `CLAUDE.md`（项目 + 用户级） | `.claude/skills/` | ⚠️ 文档依据 |
 | **Cursor** | `AGENTS.md` / `.cursor/rules/` | — | ⚠️ 文档依据 |
 | **Gemini CLI** | `GEMINI.md`（默认名）里 `@AGENTS.md`，或项目/用户 `settings.json` 的 `context.fileName`；**默认不读 `AGENTS.md`** | `.agents/skills/`（docs/06 官方口径，本机未实测） | ✅ 实测验证（规则注入；真实模型端见 §7） |
+| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（发现层；**不跟随 Junction**，见 §10） |
 | **Aider** | `AGENTS.md`（需在 `.aider.conf.yml` 声明） | — | ⚠️ 文档依据 |
 | **GitHub Copilot coding agent** | `AGENTS.md` | — | ⚠️ 文档依据 |
 
@@ -409,6 +416,161 @@ read: AGENTS.md
 **规则入口**：`AGENTS.md`
 
 **未验证**：依赖 GitHub 侧托管环境，未做本地验证。
+
+---
+
+### 10. Google Antigravity ✅ 实测验证（规则与技能发现；模型侧见 §10.6）
+
+**实测版本**：Antigravity App `2.27.0`（Electron 44.4.3 / Chrome 152，Windows 11，
+语言服务 `language_server.exe` 版本 2.27.0）。同日核对官方文档
+<https://antigravity.google/docs/rules> 与 <https://antigravity.google/docs/skills>，结论一致。
+
+> 这是 Gemini CLI **迁移的目标产品**（Google 已下线 Gemini CLI 的免费个人版登录，提示 "migrate
+> to the Antigravity suite of products"，见 §7）。两者规则文件名都叫 `AGENTS.md` /
+> `GEMINI.md`，但**发现机制完全不同**，不要照搬 §7 的结论。
+
+#### 10.1 规则入口（原生读 `AGENTS.md`，不需要 `@` 导入）
+
+与 Gemini CLI **最大的差别**：Antigravity **默认就读 `AGENTS.md`**，不需要
+`GEMINI.md` 里写 `@AGENTS.md`，也不需要配 `context.fileName`。
+
+| 层级 | 路径 | 加载语义 |
+|---|---|---|
+| 目录级 | `<任意目录>/AGENTS.md`、`<任意目录>/GEMINI.md` | 从被读/被改文件所在目录**向上走到仓库根**，逐层加载；该目录及其子目录生效 |
+| 目录级（点目录） | `<目录>/.agents/AGENTS.md`、`<目录>/.agents/GEMINI.md` | 同上 |
+| 目录级（模块化） | `<目录>/.agents/rules/*.md`（旧版 `.agent/rules/*.md`） | **仅扫直接子文件**，嵌套子目录里的 `.md` 不会自动加载（需 `.agents/rules.json` 显式登记） |
+| 全局 | `~/.gemini/AGENTS.md`、`~/.gemini/GEMINI.md` | 整机所有工作区，恒 `always_on` |
+| 全局（config） | `~/.gemini/config/AGENTS.md`、`~/.gemini/config/GEMINI.md` | 同上 |
+| 全局（模块化） | `~/.gemini/config/rules/*.md` | **必须有 frontmatter `trigger`** |
+| CLI 专属 | `~/.gemini/antigravity-cli/rules/*.md` | 只有 Antigravity CLI 侧读 |
+| 插件 | `<plugin>/rules/AGENTS.md` | 插件启用时随插件生效（无 frontmatter，纯 Markdown） |
+
+**Windows 侧**把 `~` 换成 `%USERPROFILE%`（本机即 `C:\Users\<user>\.gemini\...`）。
+
+#### 10.2 两个会让规则**静默失效**的格式陷阱
+
+1. **`AGENTS.md` / `GEMINI.md` 不能带 frontmatter**（`[官方]` 口径：这两个文件整份当作
+   纯 Markdown、恒定 `always_on`，不做元数据解析）。反之 **`.agents/rules/*.md` 与
+   `~/.gemini/config/rules/*.md` 必须带 frontmatter**，且 `trigger` 只认
+   `always_on` / `model_decision` / `glob` / `manual` 四个**小写蛇形**值。
+   **`[实测]`** 四种写法各放一份探针，用 `GetAllRules` 读回：
+
+   | 写法 | 结果 |
+   |---|---|
+   | `trigger: always_on` | ✅ 发现，`trigger=ALWAYS_ON` |
+   | `trigger: model_decision` + `description` | ✅ 发现，`trigger=MODEL_DECISION`（只注入描述，正文按需读） |
+   | `trigger: alwaysOn`（驼峰） | ❌ **整条静默丢弃**，无任何报错 |
+   | 无 frontmatter | ❌ 同上 |
+
+2. **体积上限**（`[官方]` 口径，本机未压测）：单文件 **24,000 字节**（按 `@[label](path)`
+   展开后计算，超了按行截断）；全部 global + `always_on` 规则共享 **20,000 token** 预算，
+   超了最大的几份会被**降级成 `- <path>: <description>` 路径指针**（模型只看到"有这么个规则"，
+   看不到正文，得自己去读）。
+
+> 📌 对托管块的含义：GLOBAL-PROJECT-LOG-RULES v6 全文 **9,471 字节**，
+> 单份离 24 KB 上限有 2.5 倍余量；但全局规则是**累加**的，项目多了要算总账。
+> **`[实测]`** `GetTokenBase` 会直接报 `rulesBudget` / `remainingRulesBudget` 与逐文件
+> token 数，可作为巡检依据（见 §10.5）——本机基线：两份全局 `AGENTS.md` 各 12 token。
+
+#### 10.3 技能发现：**不跟随 Junction / 软链**（本节最重要）
+
+官方文档给出的路径是：
+
+| 入口 | 路径 |
+|---|---|
+| 工作区 | `<workspace>/.agents/skills/<name>/SKILL.md`（旧版 `.agent/skills` 兼容） |
+| 全局（App / IDE） | `~/.gemini/config/skills/<name>/SKILL.md` |
+| 全局（CLI） | `~/.gemini/antigravity-cli/skills/<name>/SKILL.md` |
+| 插件 | `<plugin>/skills/<name>/SKILL.md` |
+| 清单 | `skills.json` 的 `entries[].path`（见下） |
+
+**但"能不能被看见"取决于它是不是真目录**。2026-10-28 受控实验（每个探针单独放入、用
+`GetAllSkills` 读回、验完即删）：
+
+| 探针放置方式 | 是否被发现 |
+|---|---|
+| `~/.gemini/config/skills/<name>/`（真实目录） | ✅ 发现（`DISCOVERY_CATEGORY_INSTALLED`） |
+| 同上位置放 **Junction**（目标在同盘 `%USERPROFILE%`） | ❌ 未发现 |
+| 同上位置放 **Junction**（目标在另一块盘 `D:\...`） | ❌ 未发现 |
+| 工作区 `.agents/skills/<name>/`（真实目录） | ✅ 发现（`DISCOVERY_CATEGORY_WORKSPACE`） |
+| 工作区 `.agents/skills/<name>/` 放 **Junction** | ❌ 未发现 |
+| `copy` 一份实体进 `config/skills/` | ✅ 发现 |
+| **`skills.json` 的 `entries[].path` 指向外部实体目录** | ✅ 发现（`DISCOVERY_CATEGORY_CONFIG`，`discoveredIn` 就是 `skills.json`） |
+
+> ⚠️ **这与 WorkBuddy / Codex 的结论正好相反**：那两家的 Windows 技能入口**必须**用
+> Junction、且**读得到** Junction（见 §3.1）。所以"Windows 侧一律建 Junction"这条经验
+> **不能套到 Antigravity 上**——套了会得到一个"看起来装好了、实际模型完全不知道"的假象。
+
+**正确接法（推荐）**：实体留在你的技能仓（`<skills-root>/git-discipline/`），用清单引用：
+
+```json
+// %USERPROFILE%\.gemini\config\skills.json（全局）
+{
+  "entries": [
+    { "path": "D:\\<你的技能实体根>\\skills" }
+  ]
+}
+```
+
+`path` 指向**技能父目录**（Antigravity 只扫它下一层，即 `path/<name>/SKILL.md`）；
+绝对路径原样、`~/` 展开家目录、相对路径按**仓库根**解析。
+工作区级同理放在 `<workspace>/.agents/skills.json`（同样是工作区级优先）。
+样例见 [`configs/antigravity/skills.example.json`](../configs/antigravity/skills.example.json)。
+
+**备选**：直接 `copy` 实体进 `~/.gemini/config/skills/`（能发现，但从此有两份拷贝，会漂移）。
+**不要**用 Junction——那是唯一一种"表面成功、实际零效果"的做法。
+
+#### 10.4 全局规则文件的三种接法（Junction 也不跟）
+
+同一个受控实验的规则侧结论：
+
+| 接法 | 结果 |
+|---|---|
+| `~/.gemini/AGENTS.md` 真实文件 | ✅ 发现（`DISCOVERY_CATEGORY_CONFIG`，恒 `always_on`） |
+| `~/.gemini/config/AGENTS.md` 真实文件 | ✅ 发现（两份可并存，都会进上下文） |
+| `~/.gemini/AGENTS.md` 放 **Junction** | ❌ 未发现（`GetAllRules` 返回空） |
+| `~/.gemini/AGENTS.md` 放 **HardLink** | ✅ 发现 |
+
+> 结论：**规则文件用硬链接或直接写实体，别用 Junction**。硬链接要求**同一卷**
+> （`C:\Users\...` 内部可以），跨盘（D: → C:）只能走实体写入或复制。
+
+#### 10.5 怎么自己复验（不需要开 GUI 会话）
+
+Antigravity 的渲染进程带 DevTools 端口，语言服务同时提供 **connect 协议**的本地 HTTP 端点；
+两者都只在 `127.0.0.1` 上，从 WSL 也能直接访问。复验三步：
+
+```bash
+# 1) 拿端口与 CSRF（Windows 侧）
+#    DevToolsActivePort: %APPDATA%\Antigravity\DevToolsActivePort（第 1 行是端口）
+#    语言服务端口:  %APPDATA%\Antigravity\logs\language_server.log 里两行——
+#                   "listening on random port at <P1> for HTTPS (gRPC)"  ← RPC 走这个
+#                   "listening on random port at <P2> for HTTP"           ← 打开它取 csrfToken
+#    CSRF: GET http://127.0.0.1:<P2>/ 返回的 __APP_CONFIG__.csrfToken
+
+# 2) 问技能 / 规则 / token 预算（WSL 里直接 curl 即可；注意是 https + -k）
+curl -sk -X POST "https://127.0.0.1:<P1>/exa.language_server_pb.LanguageServerService/GetAllSkills" \
+  -H "Content-Type: application/json" -H "x-codeium-csrf-token: <CSRF>" \
+  -d '{"workspaceUris":[],"includeShadowed":true}'
+# 换 GetAllRules / GetCustomizationStates / GetTokenBase 即可
+
+# 3) 判定：目标技能的 path 出现在返回里 = 发现成功；
+#    GetTokenBase 的 Rules/Skills 分组里出现它 = 真的进了上下文预算。
+```
+
+> `GetAllSkills` 会把 `SKILL.md` 正文一并返回（很大），只想看标题就自己 `jq`/`python3` 过滤。
+> `workspaceUris` 用 `file:///C:/...` 形式；给空数组 = 只看全局。
+
+#### 10.6 验证边界（这一节 ✅ 到底覆盖了什么）
+
+- ✅ **已实测**：`AGENTS.md` / `GEMINI.md` / `.agents/rules/*.md` / `~/.gemini/config/rules/*.md`
+  的发现与 `trigger` 语义；`skills.json` 清单引用；Junction 与 HardLink 的差异；
+  `GetTokenBase` 的规则/技能预算统计。
+- ⚠️ **未实测**：**模型是否真的按规则执行**（本机没有对它跑"改一个文件→看它是否原子提交"的
+  端到端会话）。所以本节的 ✅ 是**发现与注入层**，不是行为层。
+- ⚠️ **未实测**：Antigravity CLI（`agy`）与独立 IDE 的入口（本机只装了 App，
+  `%USERPROFILE%\.gemini\agy.exe` 与 `antigravity-cli\` 都不存在；CLI/IDE 路径取自官方文档）。
+- ⚠️ Antigravity 的**子代理**可选 `workspace: branch`（自动开临时 git worktree，结束清理），
+  与 §三 的 worktree 隔离讨论相关，但**本次未对它做多代理回归**。
 
 ---
 
