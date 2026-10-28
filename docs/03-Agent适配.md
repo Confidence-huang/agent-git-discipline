@@ -46,7 +46,7 @@
 | **Claude Code** | `CLAUDE.md`（项目 + 用户级） | `.claude/skills/` | ⚠️ 文档依据 |
 | **Cursor** | `AGENTS.md` / `.cursor/rules/` | — | ⚠️ 文档依据 |
 | **Gemini CLI** | `GEMINI.md`（默认名）里 `@AGENTS.md`，或项目/用户 `settings.json` 的 `context.fileName`；**默认不读 `AGENTS.md`** | `.agents/skills/`（docs/06 官方口径，本机未实测） | ✅ 实测验证（规则注入；真实模型端见 §7） |
-| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（发现层 + 全局/项目级行为层**正反对照**；**不跟随 Junction**，见 §10） |
+| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（发现层 + 全局/项目级行为层**正反对照** + **CLI 端到端**；**不跟随 Junction**，见 §10） |
 | **Aider** | `AGENTS.md`（需在 `.aider.conf.yml` 声明） | — | ⚠️ 文档依据 |
 | **GitHub Copilot coding agent** | `AGENTS.md` | — | ⚠️ 文档依据 |
 
@@ -422,10 +422,10 @@ read: AGENTS.md
 
 ---
 
-### 10. Google Antigravity ✅ 实测验证（发现层 + 全局行为层 + **项目级行为层正反对照**；边界见 §10.6）
+### 10. Google Antigravity ✅ 实测验证（App 发现层 + 全局/项目级行为层正反对照 + **CLI 端到端**；边界见 §10.6）
 
 **实测版本**：Antigravity App `2.27.0`（Electron 44.4.3 / Chrome 152，Windows 11，
-语言服务 `language_server.exe` 版本 2.27.0）。同日核对官方文档
+语言服务 `language_server.exe` 版本 2.27.0）；CLI `agy 1.4.9`（见 §10.7）。同日核对官方文档
 <https://antigravity.google/docs/rules> 与 <https://antigravity.google/docs/skills>，结论一致。
 
 > 这是 Gemini CLI **迁移的目标产品**（Google 已下线 Gemini CLI 的免费个人版登录，提示 "migrate
@@ -611,8 +611,9 @@ curl -sk -X POST "https://127.0.0.1:<P1>/exa.language_server_pb.LanguageServerSe
 - 📌 **做这个验证的正确姿势**（下次直接照做，别重走死路）：**不需要**建项目、**不需要**碰
   原生文件对话框。在"无项目"会话里用绝对路径下指令即可——agent 会自己 `cd` 到目标仓库。
   上一轮尝试失败，是因为一心想"先绑定工作区"，而绑定恰恰是最难自动化的一步（见下方失败记录）。
-- ⚠️ Antigravity CLI（`agy`）与独立 IDE 的入口（本机只装了 App，
-  `%USERPROFILE%\.gemini\agy.exe` 与 `antigravity-cli\` 都不存在；CLI/IDE 路径取自官方文档）。
+- ✅ **Antigravity CLI（`agy`）已实测通过**（2026-10-28，`agy 1.4.9`，Windows）。
+  安装与验证过程见 §10.7；**它读的是与 App 同一份全局规则和技能**，无需另配。
+- ⚠️ **独立 IDE** 仍未测（本机 `Programs\` 下只有 App，没有独立 IDE；入口取自官方文档）。
 - ❌ **子代理的 `workspace: branch` 在本机 Windows 环境不可用（已定位为产品缺陷）**。
   现象：无论哪个 git 仓库，`invoke_subagent(workspace: "branch")` 一律失败，原始报错
   （`language_server.log` 里 `fork.go:53`）：
@@ -645,6 +646,62 @@ curl -sk -X POST "https://127.0.0.1:<P1>/exa.language_server_pb.LanguageServerSe
   受影响的是"子代理并行改同一仓库"这类用法。若你需要这条，建议向 Google 报 issue，
   或在 Windows 上把它当**不可用功能**绕开（改用 `inherit` 串行，或把子代理指到另一个**独立克隆**）。
   已清理本机所有探针 worktree 与 `%USERPROFILE%\.gemini\antigravity\worktrees\` 残留。
+#### 10.7 Antigravity CLI（`agy`）✅ 实测通过
+
+**实测版本**：`agy 1.4.9`（Windows，2026-10-28）。
+
+**安装**（官方一行，Windows PowerShell）：
+
+```powershell
+irm https://antigravity.google/cli/install.ps1 | iex
+# 装到 %LOCALAPPDATA%\agy\bin\agy.exe，并自动把该目录写进【用户】PATH
+```
+
+⚠️ 这条命令是 `| iex`（直接执行远端脚本）。**执行前先把脚本下载下来看一眼**更稳妥：
+
+```powershell
+Invoke-WebRequest -UseBasicParsing https://antigravity.google/cli/install.ps1 -OutFile agy_install.ps1
+# 审阅后：它从 manifest 取 SHA512 校验二进制，再落盘并跑 `agy install` 配置 PATH
+& .\agy_install.ps1
+```
+
+安装后当前终端**不会**立刻有 `agy`（PATH 是广播到注册表，需重开终端）。
+临时验证可以手动前置：`$env:Path = "$env:LOCALAPPDATA\agy\bin;" + $env:Path`。
+
+**最大的好消息：CLI 与 App 共用同一份规则与技能，不需要另配。**
+官方文档说 CLI 的全局技能在 `~/.gemini/antigravity-cli/skills/`，
+但二进制里的实际文档字符串写的是 **`~/.gemini/config/skills/<name>/`**——
+也就是 §10.3 里给 App 配的那一处。同时 `~/.gemini/AGENTS.md` 也照读。
+
+实测证据（真会话，逐项核对不看自述）：
+
+| 检查项 | 结果 |
+|---|---|
+| 全局规则 | 它引用了内部标签 `RULE[user_global]`，**原文复述**了"推送后必须 `git ls-remote` 核对"那条 |
+| 规则路径 | 主动报出 `C:\Users\Lenovo\.gemini\AGENTS.md` 与技能实体路径 |
+| 技能可见 | 答"有 `git-discipline`"，并给出 **`# Git 纪律`（SKILL.md#L7）** —— 真读了正文 |
+| 托管块闭环 | `rev-parse --show-toplevel` → `status` → `diff` → `git add note.md`（明说不做宽范围暂存）→ `diff --staged` → 原子提交 → `rev-list` 计 2 → `rev-parse --short` |
+| 回报 | `已git：agy-cli-e2e 第 2 次 git（commit c827a08）`，与实测 **逐项一致** |
+| 改动范围 | `git show --stat` = **1 file changed**，工作区干净 |
+
+**headless 模式的坑（会让人误判成"skill 没生效"）**：
+`agy -p "<prompt>"` 是非交互模式，**任何需要授权的工具都会被自动拒绝**，报
+
+```
+jetski: no output produced — a tool required the "command" permission that headless
+mode cannot prompt for, so it was auto-denied. Add an allow-rule under
+permissions.allow in settings.json (e.g. command(<target>))
+```
+
+两条出路：
+1. 在 `~/.gemini/antigravity-cli/settings.json` 里写
+   `{"permissions":{"allow":["command(git status)", "read_file(D:/path)", …]}}`。
+   注意路径用**正斜杠**，且要**逐条**放行（`command(git add)` 不等于放行 `git add x`）；
+2. 在**一次性测试仓库**里用 `--dangerously-skip-permissions`（仅限隔离目录，别在日常仓库用）。
+
+**与 App 的差异（已知）**：§10.6 那个子代理 `workspace: branch` 的缺陷属 App 侧；
+CLI 侧未复测（它没有子代理 UI，`invoke_subagent` 走的是同一套 fork 逻辑，**预计同样不可用**）。
+
 - 📌 **端口会变**：Antigravity 每次重启都重新分配端口（本轮就经历过 14446/14448 →
   1183/1185/1186）。复验前**必须现读** `DevToolsActivePort` 与 `language_server.log`，
   不要复用上一轮的端口号。
