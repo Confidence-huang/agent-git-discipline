@@ -565,12 +565,28 @@ curl -sk -X POST "https://127.0.0.1:<P1>/exa.language_server_pb.LanguageServerSe
 - ✅ **已实测**：`AGENTS.md` / `GEMINI.md` / `.agents/rules/*.md` / `~/.gemini/config/rules/*.md`
   的发现与 `trigger` 语义；`skills.json` 清单引用；Junction 与 HardLink 的差异；
   `GetTokenBase` 的规则/技能预算统计。
-- ⚠️ **未实测**：**模型是否真的按规则执行**（本机没有对它跑"改一个文件→看它是否原子提交"的
-  端到端会话）。所以本节的 ✅ 是**发现与注入层**，不是行为层。
+- ⚠️ **行为层未验证，且第一次尝试失败**（2026-10-28，如实记录）：本机**没有**跑成
+  「让它改一个文件→看它是否原子提交、是否按托管块回报编号」的端到端会话。所以本节 ✅
+  只是**发现与注入层**。失败原因是**界面驱动走不通**，不是结论被推翻：
+  - 想用语言服务 RPC 直接发起会话，`StartCascade` 报
+    `CortexTrajectorySource is unspecified`；`trajectorySource` 放在
+    `configOverrides` / `environment` / 顶层都无效，`trajectory_source` 只在
+    `CortexStep`/`Trajectory` 等**下游消息**上有字段，`StartCascadeRequest` 里没有
+    （Go protobuf tag 与二进制字符串均核对过）——那条路要复刻内部调用顺序，不值得做。
+  - 改走 GUI（CDP 驱动渲染进程）：能点开"创建项目"、能触发原生 `Open workspace` 文件选择框，
+    但**文件选择框内的路径填写/确认按钮**用 UIA 反复失败（`AutomationId=1152` 的路径框
+    `SetValue` 不落盘，确认按钮时有时无），探针文本也无法可靠从输入框清除。
+  - 结论：**用界面把 Antigravity 绑定到指定工作区，不是可自动化的稳定路径**；
+    要验行为层，得**人手点一次**（创建一个指向测试仓库的项目，然后发一句指令）。
+    本轮所有探针（临时仓库 `%USERPROFILE%\agy-e2e-verify`、先前的规则/技能探针目录）
+    **已全部删除并复核 `Test-Path=False`**，输入框已清空，未留下半成品项目。
 - ⚠️ **未实测**：Antigravity CLI（`agy`）与独立 IDE 的入口（本机只装了 App，
   `%USERPROFILE%\.gemini\agy.exe` 与 `antigravity-cli\` 都不存在；CLI/IDE 路径取自官方文档）。
 - ⚠️ Antigravity 的**子代理**可选 `workspace: branch`（自动开临时 git worktree，结束清理），
   与 §三 的 worktree 隔离讨论相关，但**本次未对它做多代理回归**。
+- 📌 **端口会变**：Antigravity 每次重启都重新分配端口（本轮就经历过 14446/14448 →
+  1183/1185/1186）。复验前**必须现读** `DevToolsActivePort` 与 `language_server.log`，
+  不要复用上一轮的端口号。
 
 ---
 
