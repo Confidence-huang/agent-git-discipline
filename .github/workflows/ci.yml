@@ -59,5 +59,16 @@ jobs:
           test ! -d "$SB/proj/.agents/skills/git-discipline/.git"
           echo "::endgroup::"
 
+          # antigravity：目标根在"Windows 家目录"下，靠 --win-home 指定。
+          # 这里断言两件事：装到 .gemini/config/skills 下、且**必须是实体不是链接**
+          # （Antigravity 不跟随 Junction/软链读 SKILL.md，2026-10-28 实测 —— 见 docs/03 §10.3）。
+          echo "::group::antigravity（自动 copy，不得是链接）"
+          HOME="$SB" bash scripts/install_skill.sh \
+            --target antigravity --win-home "$SB/winhome"
+          test -f "$SB/winhome/.gemini/config/skills/git-discipline/SKILL.md"
+          test ! -L "$SB/winhome/.gemini/config/skills/git-discipline"
+          test ! -d "$SB/winhome/.gemini/config/skills/git-discipline/.git"
+          echo "::endgroup::"
+
           rm -rf "$SB"
           echo "✅ 安装脚本冒烟测试通过"

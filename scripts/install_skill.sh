@@ -20,6 +20,12 @@
 #   opencode        ~/.agents/skills/<name>                 （1.18+ 自动加载该根，见 docs/03）
 #   codex-entities  <entities-root>/<name>                  （技能实体根；Codex 常有整目录 junction）
 #   codex-home      $CODEX_HOME/skills/<name>               （仅在 Codex 用独立技能目录时需要）
+#   antigravity     <winhome>/.gemini/config/skills/<name>   （Google Antigravity 全局技能根）
+#
+# ⚠️ antigravity 目标默认用 **copy**：Antigravity **不跟随 Junction/软链**读 SKILL.md
+#    （2026-10-28 实测：同盘与跨盘 Junction 都试过，只有 skills.json 清单引用与真实目录生效）。
+#    想保持"单一实体"，就别往该目录装，改用 skills.json 引用实体根
+#    （见 configs/antigravity/skills.example.json 与 docs/03 §10.3）。
 
 set -euo pipefail
 
@@ -32,8 +38,9 @@ METHOD="link"
 TARGET=""
 PROJECT_ROOT=""
 ENTITIES_ROOT=""
+WIN_HOME=""
 
-usage() { sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 # ── 参数解析 ──────────────────────────────────────────────────────
 while [ $# -gt 0 ]; do
@@ -44,6 +51,7 @@ while [ $# -gt 0 ]; do
     --name)          NAME="${2:?}"; shift 2 ;;
     --project-root)  PROJECT_ROOT="${2:?}"; shift 2 ;;
     --entities-root) ENTITIES_ROOT="${2:?}"; shift 2 ;;
+    --win-home)      WIN_HOME="${2:?}"; shift 2 ;;
     -h|--help)       usage 0 ;;
     *) echo "未知参数: $1" >&2; usage 1 ;;
   esac
@@ -80,6 +88,24 @@ case "$TARGET" in
   codex-entities)
     [ -n "$ENTITIES_ROOT" ] || { echo "❌ --target codex-entities 需要 --entities-root" >&2; exit 1; }
     DEST_DIR="$ENTITIES_ROOT"
+    ;;
+  antigravity)
+    # Antigravity 全局技能根：Windows 侧 %USERPROFILE%\.gemini\config\skills。
+    # 从 WSL 跑时家目录不能靠 $HOME 推断（那是 Linux 家目录），必须显式给 --win-home
+    # 或设 USERPROFILE；否则装到了一个 Antigravity 根本不会读的位置。
+    WH="${WIN_HOME:-${USERPROFILE:-}}"
+    [ -n "$WH" ] || {
+      echo "❌ --target antigravity 需要 --win-home <Windows 家目录>" >&2
+      echo "   例（WSL）：--win-home /mnt/c/Users/<user>" >&2
+      exit 1
+    }
+    DEST_DIR="$WH/.gemini/config/skills"
+    # 见文件头：Antigravity 读不到 Junction/软链，只有真目录与 skills.json 清单有效。
+    if [ "$METHOD" = "link" ]; then
+      echo "  ℹ️  antigravity 目标不支持链接（Antigravity 不跟随 Junction/软链），自动改为 copy" >&2
+      echo "      若要维持单一实体，请改用 skills.json 清单引用（见 configs/antigravity/）" >&2
+      METHOD="copy"
+    fi
     ;;
   *) echo "❌ 未知目标: $TARGET" >&2; usage 1 ;;
 esac

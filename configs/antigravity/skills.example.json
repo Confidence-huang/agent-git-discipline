@@ -1,0 +1,6 @@
+{
+  "_comment": "Antigravity 技能清单（skills.json）。放在 %USERPROFILE%\\.gemini\\config\\skills.json（全局）或 <workspace>/.agents/skills.json（工作区级）。entries[].path 指向一个『技能父目录』，Antigravity 只扫它下一层（即 path/<skill>/SKILL.md）；绝对路径原样、~/ 展开家目录、相对路径按仓库根解析。路径请替换成你自己的技能实体根（示例已脱敏）。为什么需要它：Antigravity 不跟随 Junction/软链去读 SKILL.md——把技能 junction 进 config/skills 会被静默跳过，用清单引用才正常发现（2026-10-28 实测，见 docs/03 §8）。",
+  "entries": [
+    { "path": "<技能实体根>\\skills" }
+  ]
+}
