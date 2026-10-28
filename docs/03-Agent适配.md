@@ -26,9 +26,10 @@
 >
 > **2026-10-28 更新**：新增 **Google Antigravity**（§10）。规则发现与技能发现都在本机
 > **实测**（App 2.27.0：`GetAllRules` / `GetAllSkills` / `GetTokenBase` 三个本地 RPC 都返回了
-> 探针内容），因此标 ✅ **发现与注入层**；但**模型是否真的照做**未验证——没有对它跑
-> "改文件→看是否原子提交"的端到端会话。另有一条**反直觉结论**：Antigravity
+> 探针内容），因此标 ✅ **发现与注入层**。另有一条**反直觉结论**：Antigravity
 > **不跟随 Junction/软链**读技能，靠 `skills.json` 清单引用才生效（§10.3）。
+> **同日补测**：真会话里它按托管块走完了「核对边界 → 窄暂存 → 复核 → 原子提交 →
+> 报编号」全流程，编号与 SHA 逐项核对一致（§10.6），**行为层也已实测**。
 
 ---
 
@@ -43,7 +44,7 @@
 | **Claude Code** | `CLAUDE.md`（项目 + 用户级） | `.claude/skills/` | ⚠️ 文档依据 |
 | **Cursor** | `AGENTS.md` / `.cursor/rules/` | — | ⚠️ 文档依据 |
 | **Gemini CLI** | `GEMINI.md`（默认名）里 `@AGENTS.md`，或项目/用户 `settings.json` 的 `context.fileName`；**默认不读 `AGENTS.md`** | `.agents/skills/`（docs/06 官方口径，本机未实测） | ✅ 实测验证（规则注入；真实模型端见 §7） |
-| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（发现层；**不跟随 Junction**，见 §10） |
+| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（发现层 + 行为层闭环；**不跟随 Junction**，见 §10） |
 | **Aider** | `AGENTS.md`（需在 `.aider.conf.yml` 声明） | — | ⚠️ 文档依据 |
 | **GitHub Copilot coding agent** | `AGENTS.md` | — | ⚠️ 文档依据 |
 
@@ -419,7 +420,7 @@ read: AGENTS.md
 
 ---
 
-### 10. Google Antigravity ✅ 实测验证（规则与技能发现；模型侧见 §10.6）
+### 10. Google Antigravity ✅ 实测验证（规则与技能发现 **+ 行为层闭环**；边界见 §10.6）
 
 **实测版本**：Antigravity App `2.27.0`（Electron 44.4.3 / Chrome 152，Windows 11，
 语言服务 `language_server.exe` 版本 2.27.0）。同日核对官方文档
@@ -565,28 +566,56 @@ curl -sk -X POST "https://127.0.0.1:<P1>/exa.language_server_pb.LanguageServerSe
 - ✅ **已实测**：`AGENTS.md` / `GEMINI.md` / `.agents/rules/*.md` / `~/.gemini/config/rules/*.md`
   的发现与 `trigger` 语义；`skills.json` 清单引用；Junction 与 HardLink 的差异；
   `GetTokenBase` 的规则/技能预算统计。
-- ⚠️ **行为层未验证，且第一次尝试失败**（2026-10-28，如实记录）：本机**没有**跑成
-  「让它改一个文件→看它是否原子提交、是否按托管块回报编号」的端到端会话。所以本节 ✅
-  只是**发现与注入层**。失败原因是**界面驱动走不通**，不是结论被推翻：
-  - 想用语言服务 RPC 直接发起会话，`StartCascade` 报
-    `CortexTrajectorySource is unspecified`；`trajectorySource` 放在
-    `configOverrides` / `environment` / 顶层都无效，`trajectory_source` 只在
-    `CortexStep`/`Trajectory` 等**下游消息**上有字段，`StartCascadeRequest` 里没有
-    （Go protobuf tag 与二进制字符串均核对过）——那条路要复刻内部调用顺序，不值得做。
-  - 改走 GUI（CDP 驱动渲染进程）：能点开"创建项目"、能触发原生 `Open workspace` 文件选择框，
-    但**文件选择框内的路径填写/确认按钮**用 UIA 反复失败（`AutomationId=1152` 的路径框
-    `SetValue` 不落盘，确认按钮时有时无），探针文本也无法可靠从输入框清除。
-  - 结论：**用界面把 Antigravity 绑定到指定工作区，不是可自动化的稳定路径**；
-    要验行为层，得**人手点一次**（创建一个指向测试仓库的项目，然后发一句指令）。
-    本轮所有探针（临时仓库 `%USERPROFILE%\agy-e2e-verify`、先前的规则/技能探针目录）
-    **已全部删除并复核 `Test-Path=False`**，输入框已清空，未留下半成品项目。
-- ⚠️ **未实测**：Antigravity CLI（`agy`）与独立 IDE 的入口（本机只装了 App，
+- ✅ **行为层已实测**（2026-10-28，App 2.27.0，真会话）：在**无项目（outside-of-project）**
+  会话里发一句「在 `C:\Users\Lenovo\agy-e2e-verify` 把 `note.md` 末尾追加一行，然后按你当前
+  生效的 Git 纪律处理这次改动，并告诉我做了哪些 git 操作」，它**完整走完了托管块要求的闭环**：
+
+  | 托管块条款 | 它的实际行为 | 独立核对 |
+  |---|---|---|
+  | 先确认仓库边界 | `git rev-parse --show-toplevel` → 报告仓库根；`git status` + `git branch --show-current` | 一致 |
+  | 禁宽范围暂存 | 只 `git add note.md`，并自己说明"避免 `git add .` / `-A`" | `git show --stat` = **1 file changed** |
+  | 复核暂存差异 | `git diff --staged` | 一致 |
+  | 原子提交 | `git commit -m "docs: append E2E_OK to note.md"` | SHA `f1e1c08…` 与它自报**逐字节一致** |
+  | 第 N 次 git 编号 | `git rev-list --first-parent --count HEAD` → 报"第 2 次" | 实为 **2**，一致 |
+  | 回报格式 | 输出 `已git：agy-e2e-verify 第 2 次 git（commit f1e1c08）` | **完全符合托管块规定的形态**，含仓库名 |
+  | push 需单独授权 | 未推送，只做本地提交 | 远端无变化 |
+
+  另有一条**直接证据**：会话记录里出现「已分析 `git-discipline/SKILL.md#L1-205`」
+  —— 它确实读了技能正文（不是只读描述），规则经由 §10.3 的 `skills.json` 清单进了上下文。
+
+  ⚠️ 一个**易误判的点**：验完 `git status` 仍显示 ` M note.md`，看着像它漏提交。
+  实测是**纯换行差异**（`git diff --ignore-all-space --quiet` 通过）：工作区末行 `0d0a`、
+  blob 是 `0a`，Windows 侧写入 CRLF 而仓库无 `.gitattributes` 归一化所致。
+  **它当时自述"工作区已干净"是准确的**——不要把这个 CRLF 假象记成"agent 漏了收尾"。
+
+- ⚠️ **仍未实测**：项目级规则（`<workspace>/AGENTS.md`）在**真会话**里的行为层效果。
+  上面的会话走的是"无项目"，所以生效的是**全局** `~/.gemini/AGENTS.md` + 全局技能；
+  项目级规则只在 `GetAllRules` 层面验证过（见 10.1），没有在真会话里跑过"项目块压过全局"的对照。
+- 📌 **做这个验证的正确姿势**（下次直接照做，别重走死路）：**不需要**建项目、**不需要**碰
+  原生文件对话框。在"无项目"会话里用绝对路径下指令即可——agent 会自己 `cd` 到目标仓库。
+  上一轮尝试失败，是因为一心想"先绑定工作区"，而绑定恰恰是最难自动化的一步（见下方失败记录）。
+- ⚠️ Antigravity CLI（`agy`）与独立 IDE 的入口（本机只装了 App，
   `%USERPROFILE%\.gemini\agy.exe` 与 `antigravity-cli\` 都不存在；CLI/IDE 路径取自官方文档）。
 - ⚠️ Antigravity 的**子代理**可选 `workspace: branch`（自动开临时 git worktree，结束清理），
   与 §三 的 worktree 隔离讨论相关，但**本次未对它做多代理回归**。
 - 📌 **端口会变**：Antigravity 每次重启都重新分配端口（本轮就经历过 14446/14448 →
   1183/1185/1186）。复验前**必须现读** `DevToolsActivePort` 与 `language_server.log`，
   不要复用上一轮的端口号。
+
+<details>
+<summary>附：一次失败的自动化尝试（2026-10-28，留作反面教材）</summary>
+
+目标同上，但当时想先"把工作区绑定成测试仓库"，两条路都走不通：
+
+- **语言服务 RPC 直起会话**：`StartCascade` 报 `CortexTrajectorySource is unspecified`；
+  `trajectorySource` 放顶层 / `configOverrides` / `environment` 均无效，
+  `trajectory_source` 只出现在 `CortexStep` / `Trajectory` 等**下游消息**上，
+  `StartCascadeRequest` 本身没有该字段（Go protobuf tag 与二进制字符串均核对过）。
+- **CDP 驱动 GUI**：能点开"创建项目"、能触发原生 `Open workspace` 文件选择框，
+  但对话框内的路径输入（UIA `AutomationId=1152`）`SetValue` 不落盘、确认按钮时有时无。
+
+教训：**验证行为层根本不需要绑定工作区**。绕开这一步，问题立刻消失。
+</details>
 
 ---
 
