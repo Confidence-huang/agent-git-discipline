@@ -46,7 +46,7 @@
 | **Claude Code** | `CLAUDE.md`（项目 + 用户级） | `.claude/skills/` | ⚠️ 文档依据 |
 | **Cursor** | `AGENTS.md` / `.cursor/rules/` | — | ⚠️ 文档依据 |
 | **Gemini CLI** | `GEMINI.md`（默认名）里 `@AGENTS.md`，或项目/用户 `settings.json` 的 `context.fileName`；**默认不读 `AGENTS.md`** | `.agents/skills/`（docs/06 官方口径，本机未实测） | ✅ 实测验证（规则注入；真实模型端见 §7） |
-| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（发现层 + 全局/项目级行为层**正反对照** + **CLI 端到端**；**不跟随 Junction**，见 §10） |
+| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（App / CLI / 独立 IDE 三端；行为层正反对照；**不跟随 Junction**，见 §10） |
 | **Aider** | `AGENTS.md`（需在 `.aider.conf.yml` 声明） | — | ⚠️ 文档依据 |
 | **GitHub Copilot coding agent** | `AGENTS.md` | — | ⚠️ 文档依据 |
 
@@ -422,10 +422,10 @@ read: AGENTS.md
 
 ---
 
-### 10. Google Antigravity ✅ 实测验证（App 发现层 + 全局/项目级行为层正反对照 + **CLI 端到端**；边界见 §10.6）
+### 10. Google Antigravity ✅ 实测验证（App 发现层 + 全局/项目级行为层正反对照 + **CLI 端到端** + **独立 IDE**；边界见 §10.6/§10.8）
 
 **实测版本**：Antigravity App `2.27.0`（Electron 44.4.3 / Chrome 152，Windows 11，
-语言服务 `language_server.exe` 版本 2.27.0）；CLI `agy 1.4.9`（见 §10.7）。同日核对官方文档
+语言服务 `language_server.exe` 版本 2.27.0）；CLI `agy 1.4.9`（§10.7）；独立 IDE `2.6.0`（§10.8）。同日核对官方文档
 <https://antigravity.google/docs/rules> 与 <https://antigravity.google/docs/skills>，结论一致。
 
 > 这是 Gemini CLI **迁移的目标产品**（Google 已下线 Gemini CLI 的免费个人版登录，提示 "migrate
@@ -613,7 +613,9 @@ curl -sk -X POST "https://127.0.0.1:<P1>/exa.language_server_pb.LanguageServerSe
   上一轮尝试失败，是因为一心想"先绑定工作区"，而绑定恰恰是最难自动化的一步（见下方失败记录）。
 - ✅ **Antigravity CLI（`agy`）已实测通过**（2026-10-28，`agy 1.4.9`，Windows）。
   安装与验证过程见 §10.7；**它读的是与 App 同一份全局规则和技能**，无需另配。
-- ⚠️ **独立 IDE** 仍未测（本机 `Programs\` 下只有 App，没有独立 IDE；入口取自官方文档）。
+- ✅ **独立 IDE 已装并实测到"规则确实进了它的上下文"**（2026-10-29，`Antigravity IDE 2.6.0`，
+  VS Code 内核 `1.107.0`）。**配置零改动即可用**——它读的就是 App 那套，见 §10.8。
+  行为层（让 IDE 里的 agent 真去提交）未做：IDE 不开 CDP 端口，UI 不可自动化。
 - ❌ **子代理的 `workspace: branch` 在本机 Windows 环境不可用（已定位为产品缺陷）**。
   现象：无论哪个 git 仓库，`invoke_subagent(workspace: "branch")` 一律失败，原始报错
   （`language_server.log` 里 `fork.go:53`）：
@@ -701,6 +703,40 @@ permissions.allow in settings.json (e.g. command(<target>))
 
 **与 App 的差异（已知）**：§10.6 那个子代理 `workspace: branch` 的缺陷属 App 侧；
 CLI 侧未复测（它没有子代理 UI，`invoke_subagent` 走的是同一套 fork 逻辑，**预计同样不可用**）。
+
+#### 10.8 Antigravity 独立 IDE（`2.6.0`）✅ 配置零改动即可用
+
+**它是什么**：与 App **平行的另一个产品**——基于 **VS Code 内核**（`1.107.0`）的完整 IDE，
+不是 App 的一个面板。App 管"多会话编排 / 项目 / 自动化"，IDE 管"在编辑器里改代码"：
+Tab 补全、`Ctrl+I` 行内指令、行内 diff 审阅、从编译错误直接叫 agent。
+
+**安装**（官网 `antigravity.google/product/antigravity-ide`，winget **没有**这个包）：
+
+```powershell
+# 版本号取自官网下载页；Windows x64
+Invoke-WebRequest -Uri "https://edgedl.me.gvt1.com/edgedl/release2/j0qc3/antigravity/stable/<ver>/windows-x64/Antigravity%20IDE.exe" -OutFile "$env:TEMP\AntigravityIDE.exe"
+(Get-AuthenticodeSignature "$env:TEMP\AntigravityIDE.exe").Status   # 应为 Valid，签名者 CN=Google LLC
+& "$env:TEMP\AntigravityIDE.exe" /SILENT /NORESTART                  # Inno Setup 打包
+# 装到 %LOCALAPPDATA%\Programs\Antigravity IDE（约 1.9 万文件）
+```
+
+装完有 `bin\antigravity-ide.cmd`，可以 `antigravity-ide.cmd <目录>` 直接打开工程。
+
+**验证结论：不需要为 IDE 做任何额外配置。** 三条证据：
+
+1. **它用的是 App 那个 `language_server.exe`**（本机实测：IDE 启动后没有新起 LS 进程，
+   仍是 App 的 pid，端口 1185/1186）。⇒ **同一套规则解析、同一套技能发现**。
+2. **IDE 自己的 Customizations 面板直接显示**：`Rules 1,007 / 20,000 tokens (5.0%)`、
+   `Skills 223 tokens (1.1%)`、技能列表里有 **`git-discipline`（Global）** —— 与 App 侧
+   `GetTokenBase` 的实测数字**逐位一致**（见 §10.6）。
+3. **用同一后端查**：`GetAllRules` 对新工程返回全局 `~/.gemini/AGENTS.md` +
+   该工程 `AGENTS.md`（`DISCOVERY_CATEGORY_WORKSPACE`）；`GetTokenBase` 的 Skills 组仍是
+   `git-discipline`。
+
+**边界（诚实）**：**行为层没做**。IDE 是 VS Code 内核，**不开 CDP 端口**
+（本机实测：它只有一个加载页 HTTP 端口 7760，`/json/list` 返回 `Not found`），
+UI 没法像 App 那样用 CDP 驱动。所以这里的 ✅ 是"**规则与技能确实进了 IDE 的上下文**"，
+不是"IDE 里的 agent 真的按托管块提交过"。要验后者得人手在 IDE 里点一次。
 
 - 📌 **端口会变**：Antigravity 每次重启都重新分配端口（本轮就经历过 14446/14448 →
   1183/1185/1186）。复验前**必须现读** `DevToolsActivePort` 与 `language_server.log`，

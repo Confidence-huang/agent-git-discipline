@@ -127,7 +127,7 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 | Claude Code | 项目 `CLAUDE.md` 里写 `@AGENTS.md`（**默认不读 AGENTS.md**，样例见 `configs/claude/`） | ⚠️ 未验证（样例已按官方文档给出） |
 | Cursor | 根/子目录 `AGENTS.md` 原生读取；可选 `.cursor/rules/*.mdc`（见 `configs/cursor/`） | ⚠️ 未验证 |
 | Gemini CLI | `GEMINI.md` 里 `@AGENTS.md`，或配 `context.fileName`（见 `configs/gemini/`）；**默认不读 `AGENTS.md`** | ✅ 已验证（规则注入实测；真实模型后端需 API key/Vertex，见 docs/03 §7） |
-| Google Antigravity | `AGENTS.md` / `GEMINI.md` **原生读取**（项目子目录 + 全局 `%USERPROFILE%\.gemini\`、`…\.gemini\config\`）；技能走 `.agents/skills/`、`…\.gemini\config\skills\`，**外部实体用 `skills.json` 清单引用**（见 `configs/antigravity/`） | ✅ 已验证（发现层 + 全局/项目级行为层**正反对照** + **CLI `agy` 端到端**；**不跟随 Junction**，见 docs/03 §10） |
+| Google Antigravity | `AGENTS.md` / `GEMINI.md` **原生读取**（项目子目录 + 全局 `%USERPROFILE%\.gemini\`、`…\.gemini\config\`）；技能走 `.agents/skills/`、`…\.gemini\config\skills\`，**外部实体用 `skills.json` 清单引用**（见 `configs/antigravity/`） | ✅ 已验证（**App / CLI / 独立 IDE 三端**；行为层正反对照；**不跟随 Junction**，见 docs/03 §10） |
 | Aider | `.aider.conf.yml` 的 `read: [AGENTS.md]`（**无技能机制**，见 `configs/aider/`） | ⚠️ 未验证 |
 | GitHub Copilot coding agent | 根 `AGENTS.md` **零配置生效**（含嵌套）；技能走 `.agents/skills/` | ⚠️ 未验证（官方文档口径） |
 
@@ -157,6 +157,10 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   `tools/`，两份**同名**脚本对**同一个事实**给出**相反判据**，据此得出的结论是错的 ——
   识别信号 = 输出与仓库既有决定相反；退休路径已走通：三道核对 → `git worktree remove`
   （**不加 `--force`**）→ 四项验证。见 [docs/06](docs/06-未验证项的业界做法.md) §三）、
+  **Antigravity 独立 IDE (`2.6.0`) 的规则继承**（2026-10-29：它与 App **共用同一个
+  `language_server.exe`**，所以规则/技能零改动即可用；IDE 自己的 Customizations 面板显示
+  `Rules 1,007 tokens (5.0%)` / `Skills 223 tokens (1.1%)`、列表里有 `git-discipline (Global)`，
+  与 App 侧 `GetTokenBase` 逐位一致）、
   **Antigravity CLI (`agy` 1.4.9) 端到端**（2026-10-28：它读的是**与 App 同一份**全局
   `AGENTS.md` 与 `skills.json` 技能；真会话里引用了 `RULE[user_global]`、报出
   `# Git 纪律（SKILL.md#L7）`、窄暂存+原子提交+报 `已git：… 第 2 次 git（commit c827a08）`，
@@ -189,8 +193,9 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) 第八节）、
   Claude Code / Cursor / Aider 的**端到端规则生效**（本机已装 Claude Code，其 CLI 还需单独登录；
   Cursor / Aider **本机未安装**；样例见 `configs/`，但**样例 ≠ 实测**）、
-  **Antigravity 独立 IDE**（App 与 CLI 都已实测，见下条；本机 `Programs\` 下只有 App，
-  独立 IDE 的入口取自官方文档）、
+  **Antigravity 独立 IDE 的行为层**（已装 `2.6.0` 并确认规则/技能进了它的上下文——
+  它与 App 共用同一个 `language_server.exe`，Customizations 面板显示的 1,007/223 token 与 App 逐位一致；
+  但 IDE 是 VS Code 内核、**不开 CDP**，UI 不可自动化，所以没跑过"让它真去提交"的会话。见 docs/03 §10.8）、
   **Antigravity 子代理的 `workspace: branch`**（❌ 实测**不可用**，已定位为产品缺陷：
   `fork.go` 给 `CreateWorktree` 传了 `workspaceUri` 而非 `repoPath`，导致
   "branch workspace not supported for VCS type Unknown"；换 `repoPath` 虽返回 200，
