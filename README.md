@@ -187,6 +187,10 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   Cursor / Aider **本机未安装**；样例见 `configs/`，但**样例 ≠ 实测**）、
   **Antigravity CLI(`agy`) 与独立 IDE**（App 侧的全局层与项目级层都已实测，见下一条；
   但本机没装 `agy`，两个入口取自官方文档）、
+  **Antigravity 子代理的 `workspace: branch`**（❌ 实测**不可用**，已定位为产品缺陷：
+  `fork.go` 给 `CreateWorktree` 传了 `workspaceUri` 而非 `repoPath`，导致
+  "branch workspace not supported for VCS type Unknown"；换 `repoPath` 虽返回 200，
+  但 worktree 被记成畸形路径、`gitdir` 指向不存在的目录。详见 docs/03 §10.6）、
   **Gemini CLI 的真实模型后端**（规则注入已实测，但 0.64.0 的免费个人版登录已被 Google 下线：
   报 `This client is no longer supported for Gemini Code Assist for individuals`，提示迁移
   Antigravity；`0.65.0-preview.0` 的 OAuth client 未变。真实后端只能走 `GEMINI_API_KEY` 或
