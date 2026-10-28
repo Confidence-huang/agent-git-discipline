@@ -613,8 +613,38 @@ curl -sk -X POST "https://127.0.0.1:<P1>/exa.language_server_pb.LanguageServerSe
   上一轮尝试失败，是因为一心想"先绑定工作区"，而绑定恰恰是最难自动化的一步（见下方失败记录）。
 - ⚠️ Antigravity CLI（`agy`）与独立 IDE 的入口（本机只装了 App，
   `%USERPROFILE%\.gemini\agy.exe` 与 `antigravity-cli\` 都不存在；CLI/IDE 路径取自官方文档）。
-- ⚠️ Antigravity 的**子代理**可选 `workspace: branch`（自动开临时 git worktree，结束清理），
-  与 §三 的 worktree 隔离讨论相关，但**本次未对它做多代理回归**。
+- ❌ **子代理的 `workspace: branch` 在本机 Windows 环境不可用（已定位为产品缺陷）**。
+  现象：无论哪个 git 仓库，`invoke_subagent(workspace: "branch")` 一律失败，原始报错
+  （`language_server.log` 里 `fork.go:53`）：
+
+  ```
+  Failed to branch workspace file:///d:/<repo>: branch workspace not supported for VCS type Unknown
+  falling back to original URI
+  ```
+
+  排查过程与结论（2026-10-28，逐条实测）：
+  | 假设 | 结果 |
+  |---|---|
+  | 仓库没 remote | ❌ 加了可达 remote 仍失败 |
+  | 路径含空格 | ❌ 换 `D:\agy-nospace-test`（无空格）仍失败 |
+  | 盘符大小写（日志里是小写 `d:`） | ❌ `D:` / `d:` 都失败 |
+  | 需要上游追踪 `branch.main.remote` | ❌ 补了仍失败 |
+  | 工作区没登记给 LS | ❌ `AddTrackedWorkspace` 登记后 `GetWorkspaceInfos` 已能返回 `gitRootUri`，仍失败 |
+
+  **真正的分界点在 RPC 参数**：`CreateWorktree` 传 `workspaceUri` 会 500
+  （`fatal: not a git repository … exit status 128`），改传 **`repoPath`**（`D:/xxx` 形式）
+  才返回 200。也就是说 **`fork.go` 传错了字段**——这正是 "VCS type Unknown" 的来源。
+
+  **但即便走通 `repoPath`，产物也不可用**：返回的 `worktreeDirUri` 指向
+  `~/.gemini/antigravity/worktrees/<repo>/<name>`，可该目录**并不存在**；
+  `git worktree list` 显示它被记成了一个
+  `<repo>/.git/worktrees/<name>/C:/Users/.../worktrees/...` 的畸形路径（`prunable`），
+  `gitdir` 指针指向不存在的目录。⇒ **worktree 建到一半就断了，Antigravity 自己也用不了**。
+
+  **对本项目的实际影响**：规则适配**不受影响**（`workspace` 缺省是 `inherit`，可用）；
+  受影响的是"子代理并行改同一仓库"这类用法。若你需要这条，建议向 Google 报 issue，
+  或在 Windows 上把它当**不可用功能**绕开（改用 `inherit` 串行，或把子代理指到另一个**独立克隆**）。
+  已清理本机所有探针 worktree 与 `%USERPROFILE%\.gemini\antigravity\worktrees\` 残留。
 - 📌 **端口会变**：Antigravity 每次重启都重新分配端口（本轮就经历过 14446/14448 →
   1183/1185/1186）。复验前**必须现读** `DevToolsActivePort` 与 `language_server.log`，
   不要复用上一轮的端口号。
