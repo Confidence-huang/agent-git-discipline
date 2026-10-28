@@ -29,7 +29,9 @@
 > 探针内容），因此标 ✅ **发现与注入层**。另有一条**反直觉结论**：Antigravity
 > **不跟随 Junction/软链**读技能，靠 `skills.json` 清单引用才生效（§10.3）。
 > **同日补测**：真会话里它按托管块走完了「核对边界 → 窄暂存 → 复核 → 原子提交 →
-> 报编号」全流程，编号与 SHA 逐项核对一致（§10.6），**行为层也已实测**。
+> 报编号」全流程，编号与 SHA 逐项核对一致（§10.6），**行为层也已实测**；
+> 随后又在真项目里做了**项目块正反对照**（移除项目独有条款后行为随之改变），
+> 证明项目级规则确实进上下文且优先生效（§10.6）。
 
 ---
 
@@ -44,7 +46,7 @@
 | **Claude Code** | `CLAUDE.md`（项目 + 用户级） | `.claude/skills/` | ⚠️ 文档依据 |
 | **Cursor** | `AGENTS.md` / `.cursor/rules/` | — | ⚠️ 文档依据 |
 | **Gemini CLI** | `GEMINI.md`（默认名）里 `@AGENTS.md`，或项目/用户 `settings.json` 的 `context.fileName`；**默认不读 `AGENTS.md`** | `.agents/skills/`（docs/06 官方口径，本机未实测） | ✅ 实测验证（规则注入；真实模型端见 §7） |
-| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（发现层 + 行为层闭环；**不跟随 Junction**，见 §10） |
+| **Google Antigravity** | `AGENTS.md` / `GEMINI.md` **原生读取**（项目任意子目录 + 全局 `~/.gemini/`、`~/.gemini/config/`）；模块化规则 `.agents/rules/*.md` 或 `~/.gemini/config/rules/*.md`（**必须有 `trigger` frontmatter**） | `.agents/skills/`（工作区）、`~/.gemini/config/skills/`（全局）、`plugins/<name>/skills/`；**外部目录走 `skills.json` 清单** | ✅ 实测验证（发现层 + 全局/项目级行为层**正反对照**；**不跟随 Junction**，见 §10） |
 | **Aider** | `AGENTS.md`（需在 `.aider.conf.yml` 声明） | — | ⚠️ 文档依据 |
 | **GitHub Copilot coding agent** | `AGENTS.md` | — | ⚠️ 文档依据 |
 
@@ -420,7 +422,7 @@ read: AGENTS.md
 
 ---
 
-### 10. Google Antigravity ✅ 实测验证（规则与技能发现 **+ 行为层闭环**；边界见 §10.6）
+### 10. Google Antigravity ✅ 实测验证（发现层 + 全局行为层 + **项目级行为层正反对照**；边界见 §10.6）
 
 **实测版本**：Antigravity App `2.27.0`（Electron 44.4.3 / Chrome 152，Windows 11，
 语言服务 `language_server.exe` 版本 2.27.0）。同日核对官方文档
@@ -588,9 +590,24 @@ curl -sk -X POST "https://127.0.0.1:<P1>/exa.language_server_pb.LanguageServerSe
   blob 是 `0a`，Windows 侧写入 CRLF 而仓库无 `.gitattributes` 归一化所致。
   **它当时自述"工作区已干净"是准确的**——不要把这个 CRLF 假象记成"agent 漏了收尾"。
 
-- ⚠️ **仍未实测**：项目级规则（`<workspace>/AGENTS.md`）在**真会话**里的行为层效果。
-  上面的会话走的是"无项目"，所以生效的是**全局** `~/.gemini/AGENTS.md` + 全局技能；
-  项目级规则只在 `GetAllRules` 层面验证过（见 10.1），没有在真会话里跑过"项目块压过全局"的对照。
+- ✅ **项目级规则的行为层也已实测，且做了正反对照**（2026-10-28 下午，App 2.27.0）：
+  在一个真实项目（`D:\Antigravity project\rules`，绑定为 Antigravity 的 project）里，
+  项目 `AGENTS.md` = 托管块 v6 + **三条只存在于本项目的条款**
+  （commit message 必须以 `PROJBLOCK:` 开头、回报追加 `[project-block-active]`、一条口令）。
+  先核对**三个标记字符串在全局 `AGENTS.md` 里 0 命中**，确保是干净对照：
+
+  | | 项目块含独有条款 | 已把独有条款移除（反向对照） |
+  |---|---|---|
+  | commit message | `PROJBLOCK: 在 note.md 末尾追加 PROJ_TEST` ✅ | `chore: 在 note.md 末尾追加 REVERSE_TEST` ✅ 前缀消失 |
+  | 回报后缀 | `已git：rules 第 2 次 git（commit 55861e3） [project-block-active]` ✅ | 无后缀 ✅ |
+  | 口令复述 | `AGY_PROJ_MARKER_20261028_e7c4` 原样输出 ✅ | —（已移除，无从复述） |
+  | 托管块闭环 | 窄暂存 / 复核 / 原子提交 / 报编号（第 2 次，实测一致） | 同样完整（第 4 次，实测一致） |
+
+  ⇒ **因果成立**：行为随项目块内容变化而变化，不是"碰巧照做了全局规则"。
+  反向对照那一轮仍按托管块完整提交并报编号，说明**项目块与全局块是叠加生效**的
+  （项目条款追加约束，全局条款继续兜底）。
+  它在该会话里读了 `AGENTS.md#L1-75` 与 `git-discipline/SKILL.md#L1-100 / #L101-160`，
+  证明项目块与技能**同时**进了上下文。
 - 📌 **做这个验证的正确姿势**（下次直接照做，别重走死路）：**不需要**建项目、**不需要**碰
   原生文件对话框。在"无项目"会话里用绝对路径下指令即可——agent 会自己 `cd` 到目标仓库。
   上一轮尝试失败，是因为一心想"先绑定工作区"，而绑定恰恰是最难自动化的一步（见下方失败记录）。

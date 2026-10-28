@@ -127,7 +127,7 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
 | Claude Code | 项目 `CLAUDE.md` 里写 `@AGENTS.md`（**默认不读 AGENTS.md**，样例见 `configs/claude/`） | ⚠️ 未验证（样例已按官方文档给出） |
 | Cursor | 根/子目录 `AGENTS.md` 原生读取；可选 `.cursor/rules/*.mdc`（见 `configs/cursor/`） | ⚠️ 未验证 |
 | Gemini CLI | `GEMINI.md` 里 `@AGENTS.md`，或配 `context.fileName`（见 `configs/gemini/`）；**默认不读 `AGENTS.md`** | ✅ 已验证（规则注入实测；真实模型后端需 API key/Vertex，见 docs/03 §7） |
-| Google Antigravity | `AGENTS.md` / `GEMINI.md` **原生读取**（项目子目录 + 全局 `%USERPROFILE%\.gemini\`、`…\.gemini\config\`）；技能走 `.agents/skills/`、`…\.gemini\config\skills\`，**外部实体用 `skills.json` 清单引用**（见 `configs/antigravity/`） | ✅ 已验证（发现层 + **行为层闭环**；**不跟随 Junction**，见 docs/03 §10） |
+| Google Antigravity | `AGENTS.md` / `GEMINI.md` **原生读取**（项目子目录 + 全局 `%USERPROFILE%\.gemini\`、`…\.gemini\config\`）；技能走 `.agents/skills/`、`…\.gemini\config\skills\`，**外部实体用 `skills.json` 清单引用**（见 `configs/antigravity/`） | ✅ 已验证（发现层 + 全局/项目级行为层**正反对照**；**不跟随 Junction**，见 docs/03 §10） |
 | Aider | `.aider.conf.yml` 的 `read: [AGENTS.md]`（**无技能机制**，见 `configs/aider/`） | ⚠️ 未验证 |
 | GitHub Copilot coding agent | 根 `AGENTS.md` **零配置生效**（含嵌套）；技能走 `.agents/skills/` | ⚠️ 未验证（官方文档口径） |
 
@@ -157,7 +157,11 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   `tools/`，两份**同名**脚本对**同一个事实**给出**相反判据**，据此得出的结论是错的 ——
   识别信号 = 输出与仓库既有决定相反；退休路径已走通：三道核对 → `git worktree remove`
   （**不加 `--force`**）→ 四项验证。见 [docs/06](docs/06-未验证项的业界做法.md) §三）、
-  **Antigravity 的行为层闭环**（2026-10-28、App 2.27.0 真会话：无项目会话里下一句指令，
+  **Antigravity 的项目级规则正反对照**（2026-10-28、App 2.27.0：真项目里项目 `AGENTS.md`
+  加了三条独有条款 → commit message 变成 `PROJBLOCK:`、回报追加 `[project-block-active]`、
+  口令原样复述；把三条移除后 → 前缀退回 `chore:`、后缀消失，而托管块闭环照旧。
+  三个标记字符串在全局 `AGENTS.md` 里 0 命中，故是干净对照。见 docs/03 §10.6）、
+  **Antigravity 的全局行为层闭环**（2026-10-28、App 2.27.0 真会话：无项目会话里下一句指令，
   它先 `git rev-parse --show-toplevel` 核对边界、只 `git add note.md`、`git diff --staged` 复核、
   原子提交并报 `已git：agy-e2e-verify 第 2 次 git（commit f1e1c08）`——编号与 SHA 与
   `rev-list`/`rev-parse` 逐项一致，且未推送。会话记录里可见它"已分析 git-discipline/SKILL.md#L1-205"，
@@ -181,10 +185,8 @@ python3 scripts/verify_blocks.py --block <你的块文件> --targets local/targe
   [docs/05-提交与PR流程.md](docs/05-提交与PR流程.md) 第八节）、
   Claude Code / Cursor / Aider 的**端到端规则生效**（本机已装 Claude Code，其 CLI 还需单独登录；
   Cursor / Aider **本机未安装**；样例见 `configs/`，但**样例 ≠ 实测**）、
-  **Antigravity 的项目级规则行为层**（全局规则 + 全局技能已在真会话里跑通闭环：它自己读了
-  `git-discipline/SKILL.md`、窄暂存、原子提交、报出「第 2 次 git（commit f1e1c08）」且与
-  `rev-list` 一致；**但那条会话走的是"无项目"**，所以只证明了全局层。项目级 `AGENTS.md`
-  压过全局的对照、CLI(`agy`) 与独立 IDE 仍未实测）、
+  **Antigravity CLI(`agy`) 与独立 IDE**（App 侧的全局层与项目级层都已实测，见下一条；
+  但本机没装 `agy`，两个入口取自官方文档）、
   **Gemini CLI 的真实模型后端**（规则注入已实测，但 0.64.0 的免费个人版登录已被 Google 下线：
   报 `This client is no longer supported for Gemini Code Assist for individuals`，提示迁移
   Antigravity；`0.65.0-preview.0` 的 OAuth client 未变。真实后端只能走 `GEMINI_API_KEY` 或
