@@ -77,6 +77,14 @@ description: 强制 Git 纪律与可回退性，任何涉及代码、脚本、�
    执行脚本或读取配置前先确认工作树；**输出与本仓库既有决定相反时，先怀疑跑错了副本，再怀疑结论。**
    推论：同一仓库**别长期留落后的 worktree**（它是"旧副本"的温床）。
 
+### 2.1 接手 GitHub PR 时先核对 CI
+
+1. **先查目标仓库**。确认约定的检查、启用的工作流及其 PR 触发条件。可查看 `.github/workflows/`、GitHub Actions 或运行 `gh workflow list --all -R <owner/repo>`。报告哪些检查已配置、哪些尚未接入；遇到查不到权限或网络失败时，标为未核实。
+2. **再查这个 PR**。可用 `gh pr view <number> -R <owner/repo> --json headRefOid,statusCheckRollup,reviewDecision`，并打开运行详情，核对事件、对应的待合内容和结论。GitHub Actions 可能检出 PR 的临时合并提交。合并前重查，确认最新待合内容的约定检查通过且满足评审要求。
+3. **及时处理缺失的检查**。团队要求 PR CI 且仓库尚未配置时，先报告缺口，经授权用独立小 PR 接入本仓库的测试。工作流已经存在时，先排查触发事件、分支或路径筛选，以及当前提交是否有运行记录。缺失、待跑、失败或只覆盖旧提交的检查都不能记为通过。
+
+完整流程见 [现有项目接入与漏跑补验](https://github.com/Confidence-huang/agent-git-discipline/blob/main/docs/05-%E6%8F%90%E4%BA%A4%E4%B8%8EPR%E6%B5%81%E7%A8%8B.md#现有项目接入前的验收)。
+
 ## 3. 提交时：原子、窄范围、可复核
 
 1. **首段写入前建本次原子基线**（若仓库无首个提交或缺少可信基线）。
